@@ -81,7 +81,7 @@ public class TvProvider extends ContentProvider {
     private static final String OP_UPDATE = "update";
     private static final String OP_DELETE = "delete";
 
-    static final int DATABASE_VERSION = 31;
+    static final int DATABASE_VERSION = 32;
     private static final String DATABASE_NAME = "tv.db";
     private static final String CHANNELS_TABLE = "channels";
     private static final String PROGRAMS_TABLE = "programs";
@@ -196,6 +196,8 @@ public class TvProvider extends ContentProvider {
                 CHANNELS_TABLE + "." + Channels.COLUMN_INTERNAL_PROVIDER_FLAG4);
         sChannelProjectionMap.put(Channels.COLUMN_VERSION_NUMBER,
                 CHANNELS_TABLE + "." + Channels.COLUMN_VERSION_NUMBER);
+        sChannelProjectionMap.put(Channels.COLUMN_TRANSIENT,
+                CHANNELS_TABLE + "." + Channels.COLUMN_TRANSIENT);
 
         sProgramProjectionMap = new HashMap<>();
         sProgramProjectionMap.put(Programs._ID, Programs._ID);
@@ -244,6 +246,18 @@ public class TvProvider extends ContentProvider {
         sProgramProjectionMap.put(Programs.COLUMN_INTERNAL_PROVIDER_FLAG4,
                 Programs.COLUMN_INTERNAL_PROVIDER_FLAG4);
         sProgramProjectionMap.put(Programs.COLUMN_VERSION_NUMBER, Programs.COLUMN_VERSION_NUMBER);
+        sProgramProjectionMap.put(Programs.COLUMN_INTERNAL_PROVIDER_ID,
+                Programs.COLUMN_INTERNAL_PROVIDER_ID);
+        sProgramProjectionMap.put(Programs.COLUMN_PREVIEW_VIDEO_URI,
+                Programs.COLUMN_PREVIEW_VIDEO_URI);
+        sProgramProjectionMap.put(Programs.COLUMN_PREVIEW_LAST_PLAYBACK_POSITION,
+                Programs.COLUMN_PREVIEW_LAST_PLAYBACK_POSITION);
+        sProgramProjectionMap.put(Programs.COLUMN_PREVIEW_DURATION,
+                Programs.COLUMN_PREVIEW_DURATION);
+        sProgramProjectionMap.put(Programs.COLUMN_PREVIEW_INTENT_URI,
+                Programs.COLUMN_PREVIEW_INTENT_URI);
+        sProgramProjectionMap.put(Programs.COLUMN_PREVIEW_WEIGHT, Programs.COLUMN_PREVIEW_WEIGHT);
+        sProgramProjectionMap.put(Programs.COLUMN_TRANSIENT, Programs.COLUMN_TRANSIENT);
 
         sWatchedProgramProjectionMap = new HashMap<>();
         sWatchedProgramProjectionMap.put(WatchedPrograms._ID, WatchedPrograms._ID);
@@ -438,6 +452,7 @@ public class TvProvider extends ContentProvider {
                     + Channels.COLUMN_INTERNAL_PROVIDER_FLAG4 + " INTEGER,"
                     + CHANNELS_COLUMN_LOGO + " BLOB,"
                     + Channels.COLUMN_VERSION_NUMBER + " INTEGER,"
+                    + Channels.COLUMN_TRANSIENT + " INTEGER NOT NULL DEFAULT 0,"
                     // Needed for foreign keys in other tables.
                     + "UNIQUE(" + Channels._ID + "," + Channels.COLUMN_PACKAGE_NAME + ")"
                     + ");");
@@ -470,6 +485,13 @@ public class TvProvider extends ContentProvider {
                     + Programs.COLUMN_INTERNAL_PROVIDER_FLAG3 + " INTEGER,"
                     + Programs.COLUMN_INTERNAL_PROVIDER_FLAG4 + " INTEGER,"
                     + Programs.COLUMN_VERSION_NUMBER + " INTEGER,"
+                    + Programs.COLUMN_INTERNAL_PROVIDER_ID + " TEXT,"
+                    + Programs.COLUMN_PREVIEW_VIDEO_URI + " TEXT,"
+                    + Programs.COLUMN_PREVIEW_LAST_PLAYBACK_POSITION + " INTEGER,"
+                    + Programs.COLUMN_PREVIEW_DURATION + " INTEGER,"
+                    + Programs.COLUMN_PREVIEW_INTENT_URI + " TEXT,"
+                    + Programs.COLUMN_PREVIEW_WEIGHT + " INTEGER,"
+                    + Programs.COLUMN_TRANSIENT + " INTEGER NOT NULL DEFAULT 0,"
                     + "FOREIGN KEY("
                             + Programs.COLUMN_CHANNEL_ID + "," + Programs.COLUMN_PACKAGE_NAME
                             + ") REFERENCES " + CHANNELS_TABLE + "("
@@ -581,6 +603,25 @@ public class TvProvider extends ContentProvider {
                 db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
                         + Programs.COLUMN_RECORDING_PROHIBITED + " INTEGER NOT NULL DEFAULT 0;");
                 oldVersion = 31;
+            }
+            if (oldVersion == 31) {
+                db.execSQL("ALTER TABLE " + CHANNELS_TABLE + " ADD "
+                        + Channels.COLUMN_TRANSIENT + " INTEGER NOT NULL DEFAULT 0;");
+                db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
+                        + Programs.COLUMN_INTERNAL_PROVIDER_ID + " TEXT;");
+                db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
+                        + Programs.COLUMN_PREVIEW_VIDEO_URI + " TEXT;");
+                db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
+                        + Programs.COLUMN_PREVIEW_LAST_PLAYBACK_POSITION + " INTEGER;");
+                db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
+                        + Programs.COLUMN_PREVIEW_DURATION + " INTEGER;");
+                db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
+                        + Programs.COLUMN_PREVIEW_INTENT_URI + " TEXT;");
+                db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
+                        + Programs.COLUMN_PREVIEW_WEIGHT + " INTEGER;");
+                db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
+                        + Programs.COLUMN_TRANSIENT + " INTEGER NOT NULL DEFAULT 0;");
+                oldVersion = 32;
             }
             Log.i(TAG, "Upgrading from version " + oldVersion + " to " + newVersion + " is done.");
         }
