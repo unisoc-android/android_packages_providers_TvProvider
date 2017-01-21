@@ -23,6 +23,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
 import android.content.res.Resources;
+import android.content.SharedPreferences;
 import android.test.IsolatedContext;
 import android.test.RenamingDelegatingContext;
 import android.test.mock.MockContext;
@@ -65,5 +66,10 @@ class MockTvProviderContext extends IsolatedContext {
     @Override
     public int checkCallingOrSelfPermission(String permission) {
         return PackageManager.PERMISSION_GRANTED;
+    }
+
+    @Override
+    public SharedPreferences getSharedPreferences(String name, int mode) {
+        return mBase.getSharedPreferences(name, mode);
     }
 }

@@ -76,15 +76,10 @@ public class TvProvider extends ContentProvider {
     private static final boolean DEBUG = false;
     private static final String TAG = "TvProvider";
 
-    // Operation names for createSqlParams().
-    private static final String OP_QUERY = "query";
-    private static final String OP_UPDATE = "update";
-    private static final String OP_DELETE = "delete";
-
     static final int DATABASE_VERSION = 32;
+    static final String CHANNELS_TABLE = "channels";
+    static final String PROGRAMS_TABLE = "programs";
     private static final String DATABASE_NAME = "tv.db";
-    private static final String CHANNELS_TABLE = "channels";
-    private static final String PROGRAMS_TABLE = "programs";
     private static final String WATCHED_PROGRAMS_TABLE = "watched_programs";
     private static final String RECORDED_PROGRAMS_TABLE = "recorded_programs";
     private static final String DELETED_CHANNELS_TABLE = "deleted_channels";  // Deprecated
@@ -102,6 +97,12 @@ public class TvProvider extends ContentProvider {
             + " INNER JOIN " + PROGRAMS_TABLE
             + " ON (" + CHANNELS_TABLE + "." + Channels._ID + "="
             + PROGRAMS_TABLE + "." + Programs.COLUMN_CHANNEL_ID + ")";
+
+    // Operation names for createSqlParams().
+    private static final String OP_QUERY = "query";
+    private static final String OP_UPDATE = "update";
+    private static final String OP_DELETE = "delete";
+
 
     private static final UriMatcher sUriMatcher;
     private static final int MATCH_CHANNEL = 1;
@@ -635,6 +636,8 @@ public class TvProvider extends ContentProvider {
     }
 
     private DatabaseHelper mOpenHelper;
+    @VisibleForTesting
+    protected TransientRowHelper mTransientRowHelper;
 
     private final Handler mLogHandler = new WatchLogHandler();
 
@@ -644,6 +647,7 @@ public class TvProvider extends ContentProvider {
             Log.d(TAG, "Creating TvProvider");
         }
         mOpenHelper = DatabaseHelper.getInstance(getContext());
+        mTransientRowHelper = TransientRowHelper.getInstance(getContext());
         scheduleEpgDataCleanup();
         buildGenreMap();
 
@@ -730,6 +734,7 @@ public class TvProvider extends ContentProvider {
     @Override
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
             String sortOrder) {
+        mTransientRowHelper.ensureOldTransientRowsDeleted();
         boolean needsToValidateSortOrder = !callerHasAccessAllEpgDataPermission();
         SqlParams params = createSqlParams(OP_QUERY, uri, selection, selectionArgs);
 
@@ -776,6 +781,7 @@ public class TvProvider extends ContentProvider {
 
     @Override
     public Uri insert(Uri uri, ContentValues values) {
+        mTransientRowHelper.ensureOldTransientRowsDeleted();
         switch (sUriMatcher.match(uri)) {
             case MATCH_CHANNEL:
                 return insertChannel(uri, values);
@@ -882,6 +888,7 @@ public class TvProvider extends ContentProvider {
 
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
+        mTransientRowHelper.ensureOldTransientRowsDeleted();
         SqlParams params = createSqlParams(OP_DELETE, uri, selection, selectionArgs);
         SQLiteDatabase db = mOpenHelper.getWritableDatabase();
         int count;
@@ -915,6 +922,7 @@ public class TvProvider extends ContentProvider {
 
     @Override
     public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
+        mTransientRowHelper.ensureOldTransientRowsDeleted();
         SqlParams params = createSqlParams(OP_UPDATE, uri, selection, selectionArgs);
         if (params.getTables().equals(CHANNELS_TABLE)) {
             if (values.containsKey(Channels.COLUMN_LOCKED)
