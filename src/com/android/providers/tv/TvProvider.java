@@ -76,7 +76,7 @@ public class TvProvider extends ContentProvider {
     private static final boolean DEBUG = false;
     private static final String TAG = "TvProvider";
 
-    static final int DATABASE_VERSION = 32;
+    static final int DATABASE_VERSION = 33;
     static final String CHANNELS_TABLE = "channels";
     static final String PROGRAMS_TABLE = "programs";
     private static final String DATABASE_NAME = "tv.db";
@@ -259,6 +259,27 @@ public class TvProvider extends ContentProvider {
                 Programs.COLUMN_PREVIEW_INTENT_URI);
         sProgramProjectionMap.put(Programs.COLUMN_PREVIEW_WEIGHT, Programs.COLUMN_PREVIEW_WEIGHT);
         sProgramProjectionMap.put(Programs.COLUMN_TRANSIENT, Programs.COLUMN_TRANSIENT);
+        sProgramProjectionMap.put(Programs.COLUMN_TYPE, Programs.COLUMN_TYPE);
+        sProgramProjectionMap.put(Programs.COLUMN_WATCH_NEXT_TYPE, Programs.COLUMN_WATCH_NEXT_TYPE);
+        sProgramProjectionMap.put(Programs.COLUMN_POSTER_ART_ASPECT_RATIO,
+                Programs.COLUMN_POSTER_ART_ASPECT_RATIO);
+        sProgramProjectionMap.put(Programs.COLUMN_THUMBNAIL_ASPECT_RATIO,
+                Programs.COLUMN_THUMBNAIL_ASPECT_RATIO);
+        sProgramProjectionMap.put(Programs.COLUMN_LOGO, Programs.COLUMN_LOGO);
+        sProgramProjectionMap.put(Programs.COLUMN_AVAILABILITY, Programs.COLUMN_AVAILABILITY);
+        sProgramProjectionMap.put(Programs.COLUMN_STARTING_PRICE, Programs.COLUMN_STARTING_PRICE);
+        sProgramProjectionMap.put(Programs.COLUMN_OFFER_PRICE, Programs.COLUMN_OFFER_PRICE);
+        sProgramProjectionMap.put(Programs.COLUMN_RELEASE_DATE, Programs.COLUMN_RELEASE_DATE);
+        sProgramProjectionMap.put(Programs.COLUMN_ITEM_COUNT, Programs.COLUMN_ITEM_COUNT);
+        sProgramProjectionMap.put(Programs.COLUMN_LIVE, Programs.COLUMN_LIVE);
+        sProgramProjectionMap.put(Programs.COLUMN_INTERACTION_TYPE,
+                Programs.COLUMN_INTERACTION_TYPE);
+        sProgramProjectionMap.put(Programs.COLUMN_INTERACTION_COUNT,
+                Programs.COLUMN_INTERACTION_COUNT);
+        sProgramProjectionMap.put(Programs.COLUMN_AUTHOR, Programs.COLUMN_AUTHOR);
+        sProgramProjectionMap.put(Programs.COLUMN_REVIEW_RATING_STYLE,
+                Programs.COLUMN_REVIEW_RATING_STYLE);
+        sProgramProjectionMap.put(Programs.COLUMN_REVIEW_RATING, Programs.COLUMN_REVIEW_RATING);
 
         sWatchedProgramProjectionMap = new HashMap<>();
         sWatchedProgramProjectionMap.put(WatchedPrograms._ID, WatchedPrograms._ID);
@@ -493,6 +514,22 @@ public class TvProvider extends ContentProvider {
                     + Programs.COLUMN_PREVIEW_INTENT_URI + " TEXT,"
                     + Programs.COLUMN_PREVIEW_WEIGHT + " INTEGER,"
                     + Programs.COLUMN_TRANSIENT + " INTEGER NOT NULL DEFAULT 0,"
+                    + Programs.COLUMN_TYPE + " TEXT,"
+                    + Programs.COLUMN_WATCH_NEXT_TYPE + " TEXT,"
+                    + Programs.COLUMN_POSTER_ART_ASPECT_RATIO + " TEXT,"
+                    + Programs.COLUMN_THUMBNAIL_ASPECT_RATIO + " TEXT,"
+                    + Programs.COLUMN_LOGO + " TEXT,"
+                    + Programs.COLUMN_AVAILABILITY + " TEXT,"
+                    + Programs.COLUMN_STARTING_PRICE + " TEXT,"
+                    + Programs.COLUMN_OFFER_PRICE + " TEXT,"
+                    + Programs.COLUMN_RELEASE_DATE + " TEXT,"
+                    + Programs.COLUMN_ITEM_COUNT + " INTEGER,"
+                    + Programs.COLUMN_LIVE + " INTEGER NOT NULL DEFAULT 0,"
+                    + Programs.COLUMN_INTERACTION_TYPE + " TEXT,"
+                    + Programs.COLUMN_INTERACTION_COUNT + " INTEGER,"
+                    + Programs.COLUMN_AUTHOR + " TEXT,"
+                    + Programs.COLUMN_REVIEW_RATING_STYLE + " TEXT,"
+                    + Programs.COLUMN_REVIEW_RATING + " TEXT,"
                     + "FOREIGN KEY("
                             + Programs.COLUMN_CHANNEL_ID + "," + Programs.COLUMN_PACKAGE_NAME
                             + ") REFERENCES " + CHANNELS_TABLE + "("
@@ -623,6 +660,41 @@ public class TvProvider extends ContentProvider {
                 db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
                         + Programs.COLUMN_TRANSIENT + " INTEGER NOT NULL DEFAULT 0;");
                 oldVersion = 32;
+            }
+            if (oldVersion == 32) {
+                db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
+                        + Programs.COLUMN_TYPE + " TEXT;");
+                db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
+                        + Programs.COLUMN_WATCH_NEXT_TYPE + " TEXT;");
+                db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
+                        + Programs.COLUMN_POSTER_ART_ASPECT_RATIO + " TEXT;");
+                db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
+                        + Programs.COLUMN_THUMBNAIL_ASPECT_RATIO + " TEXT;");
+                db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
+                        + Programs.COLUMN_LOGO + " TEXT;");
+                db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
+                        + Programs.COLUMN_AVAILABILITY + " TEXT;");
+                db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
+                        + Programs.COLUMN_STARTING_PRICE + " TEXT;");
+                db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
+                        + Programs.COLUMN_OFFER_PRICE + " TEXT;");
+                db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
+                        + Programs.COLUMN_RELEASE_DATE + " TEXT;");
+                db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
+                        + Programs.COLUMN_ITEM_COUNT + " INTEGER;");
+                db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
+                        + Programs.COLUMN_LIVE + " INTEGER NOT NULL DEFAULT 0;");
+                db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
+                        + Programs.COLUMN_INTERACTION_TYPE + " TEXT;");
+                db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
+                        + Programs.COLUMN_INTERACTION_COUNT + " INTEGER;");
+                db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
+                        + Programs.COLUMN_AUTHOR + " TEXT;");
+                db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
+                        + Programs.COLUMN_REVIEW_RATING_STYLE + " TEXT;");
+                db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
+                        + Programs.COLUMN_REVIEW_RATING + " TEXT;");
+                oldVersion = 33;
             }
             Log.i(TAG, "Upgrading from version " + oldVersion + " to " + newVersion + " is done.");
         }
