@@ -251,13 +251,13 @@ public class TvProvider extends ContentProvider {
                 Programs.COLUMN_INTERNAL_PROVIDER_ID);
         sProgramProjectionMap.put(Programs.COLUMN_PREVIEW_VIDEO_URI,
                 Programs.COLUMN_PREVIEW_VIDEO_URI);
-        sProgramProjectionMap.put(Programs.COLUMN_PREVIEW_LAST_PLAYBACK_POSITION,
-                Programs.COLUMN_PREVIEW_LAST_PLAYBACK_POSITION);
-        sProgramProjectionMap.put(Programs.COLUMN_PREVIEW_DURATION,
-                Programs.COLUMN_PREVIEW_DURATION);
-        sProgramProjectionMap.put(Programs.COLUMN_PREVIEW_INTENT_URI,
-                Programs.COLUMN_PREVIEW_INTENT_URI);
-        sProgramProjectionMap.put(Programs.COLUMN_PREVIEW_WEIGHT, Programs.COLUMN_PREVIEW_WEIGHT);
+        sProgramProjectionMap.put(Programs.COLUMN_LAST_PLAYBACK_POSITION_MILLIS,
+                Programs.COLUMN_LAST_PLAYBACK_POSITION_MILLIS);
+        sProgramProjectionMap.put(Programs.COLUMN_DURATION_MILLIS,
+                Programs.COLUMN_DURATION_MILLIS);
+        sProgramProjectionMap.put(Programs.COLUMN_APP_LINK_INTENT_URI,
+                Programs.COLUMN_APP_LINK_INTENT_URI);
+        sProgramProjectionMap.put(Programs.COLUMN_WEIGHT, Programs.COLUMN_WEIGHT);
         sProgramProjectionMap.put(Programs.COLUMN_TRANSIENT, Programs.COLUMN_TRANSIENT);
         sProgramProjectionMap.put(Programs.COLUMN_TYPE, Programs.COLUMN_TYPE);
         sProgramProjectionMap.put(Programs.COLUMN_WATCH_NEXT_TYPE, Programs.COLUMN_WATCH_NEXT_TYPE);
@@ -265,7 +265,7 @@ public class TvProvider extends ContentProvider {
                 Programs.COLUMN_POSTER_ART_ASPECT_RATIO);
         sProgramProjectionMap.put(Programs.COLUMN_THUMBNAIL_ASPECT_RATIO,
                 Programs.COLUMN_THUMBNAIL_ASPECT_RATIO);
-        sProgramProjectionMap.put(Programs.COLUMN_LOGO, Programs.COLUMN_LOGO);
+        sProgramProjectionMap.put(Programs.COLUMN_LOGO_URI, Programs.COLUMN_LOGO_URI);
         sProgramProjectionMap.put(Programs.COLUMN_AVAILABILITY, Programs.COLUMN_AVAILABILITY);
         sProgramProjectionMap.put(Programs.COLUMN_STARTING_PRICE, Programs.COLUMN_STARTING_PRICE);
         sProgramProjectionMap.put(Programs.COLUMN_OFFER_PRICE, Programs.COLUMN_OFFER_PRICE);
@@ -509,16 +509,16 @@ public class TvProvider extends ContentProvider {
                     + Programs.COLUMN_VERSION_NUMBER + " INTEGER,"
                     + Programs.COLUMN_INTERNAL_PROVIDER_ID + " TEXT,"
                     + Programs.COLUMN_PREVIEW_VIDEO_URI + " TEXT,"
-                    + Programs.COLUMN_PREVIEW_LAST_PLAYBACK_POSITION + " INTEGER,"
-                    + Programs.COLUMN_PREVIEW_DURATION + " INTEGER,"
-                    + Programs.COLUMN_PREVIEW_INTENT_URI + " TEXT,"
-                    + Programs.COLUMN_PREVIEW_WEIGHT + " INTEGER,"
+                    + Programs.COLUMN_LAST_PLAYBACK_POSITION_MILLIS + " INTEGER,"
+                    + Programs.COLUMN_DURATION_MILLIS + " INTEGER,"
+                    + Programs.COLUMN_APP_LINK_INTENT_URI + " TEXT,"
+                    + Programs.COLUMN_WEIGHT + " INTEGER,"
                     + Programs.COLUMN_TRANSIENT + " INTEGER NOT NULL DEFAULT 0,"
                     + Programs.COLUMN_TYPE + " TEXT,"
                     + Programs.COLUMN_WATCH_NEXT_TYPE + " TEXT,"
                     + Programs.COLUMN_POSTER_ART_ASPECT_RATIO + " TEXT,"
                     + Programs.COLUMN_THUMBNAIL_ASPECT_RATIO + " TEXT,"
-                    + Programs.COLUMN_LOGO + " TEXT,"
+                    + Programs.COLUMN_LOGO_URI + " TEXT,"
                     + Programs.COLUMN_AVAILABILITY + " TEXT,"
                     + Programs.COLUMN_STARTING_PRICE + " TEXT,"
                     + Programs.COLUMN_OFFER_PRICE + " TEXT,"
@@ -650,13 +650,13 @@ public class TvProvider extends ContentProvider {
                 db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
                         + Programs.COLUMN_PREVIEW_VIDEO_URI + " TEXT;");
                 db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
-                        + Programs.COLUMN_PREVIEW_LAST_PLAYBACK_POSITION + " INTEGER;");
+                        + Programs.COLUMN_LAST_PLAYBACK_POSITION_MILLIS + " INTEGER;");
                 db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
-                        + Programs.COLUMN_PREVIEW_DURATION + " INTEGER;");
+                        + Programs.COLUMN_DURATION_MILLIS + " INTEGER;");
                 db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
-                        + Programs.COLUMN_PREVIEW_INTENT_URI + " TEXT;");
+                        + Programs.COLUMN_APP_LINK_INTENT_URI + " TEXT;");
                 db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
-                        + Programs.COLUMN_PREVIEW_WEIGHT + " INTEGER;");
+                        + Programs.COLUMN_WEIGHT + " INTEGER;");
                 db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
                         + Programs.COLUMN_TRANSIENT + " INTEGER NOT NULL DEFAULT 0;");
                 oldVersion = 32;
@@ -671,7 +671,7 @@ public class TvProvider extends ContentProvider {
                 db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
                         + Programs.COLUMN_THUMBNAIL_ASPECT_RATIO + " TEXT;");
                 db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
-                        + Programs.COLUMN_LOGO + " TEXT;");
+                        + Programs.COLUMN_LOGO_URI + " TEXT;");
                 db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
                         + Programs.COLUMN_AVAILABILITY + " TEXT;");
                 db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
