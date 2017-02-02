@@ -199,6 +199,8 @@ public class TvProvider extends ContentProvider {
                 CHANNELS_TABLE + "." + Channels.COLUMN_VERSION_NUMBER);
         sChannelProjectionMap.put(Channels.COLUMN_TRANSIENT,
                 CHANNELS_TABLE + "." + Channels.COLUMN_TRANSIENT);
+        sChannelProjectionMap.put(Channels.COLUMN_SYSTEM_APPROVED,
+                CHANNELS_TABLE + "." + Channels.COLUMN_SYSTEM_APPROVED);
 
         sProgramProjectionMap = new HashMap<>();
         sProgramProjectionMap.put(Programs._ID, Programs._ID);
@@ -475,6 +477,7 @@ public class TvProvider extends ContentProvider {
                     + CHANNELS_COLUMN_LOGO + " BLOB,"
                     + Channels.COLUMN_VERSION_NUMBER + " INTEGER,"
                     + Channels.COLUMN_TRANSIENT + " INTEGER NOT NULL DEFAULT 0,"
+                    + Channels.COLUMN_SYSTEM_APPROVED + " INTEGER NOT NULL DEFAULT 0,"
                     // Needed for foreign keys in other tables.
                     + "UNIQUE(" + Channels._ID + "," + Channels.COLUMN_PACKAGE_NAME + ")"
                     + ");");
@@ -694,6 +697,8 @@ public class TvProvider extends ContentProvider {
                         + Programs.COLUMN_REVIEW_RATING_STYLE + " TEXT;");
                 db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
                         + Programs.COLUMN_REVIEW_RATING + " TEXT;");
+                db.execSQL("ALTER TABLE " + CHANNELS_TABLE + " ADD "
+                        + Channels.COLUMN_SYSTEM_APPROVED + " INTEGER NOT NULL DEFAULT 0;");
                 oldVersion = 33;
             }
             Log.i(TAG, "Upgrading from version " + oldVersion + " to " + newVersion + " is done.");
@@ -878,6 +883,7 @@ public class TvProvider extends ContentProvider {
     private Uri insertChannel(Uri uri, ContentValues values) {
         // Mark the owner package of this channel.
         values.put(Channels.COLUMN_PACKAGE_NAME, getCallingPackage_());
+        blockIllegalAccessToSystemColumns(values);
 
         SQLiteDatabase db = mOpenHelper.getWritableDatabase();
         long rowId = db.insert(CHANNELS_TABLE, null, values);
@@ -997,10 +1003,7 @@ public class TvProvider extends ContentProvider {
         mTransientRowHelper.ensureOldTransientRowsDeleted();
         SqlParams params = createSqlParams(OP_UPDATE, uri, selection, selectionArgs);
         if (params.getTables().equals(CHANNELS_TABLE)) {
-            if (values.containsKey(Channels.COLUMN_LOCKED)
-                    && !callerHasModifyParentalControlsPermission()) {
-                throw new SecurityException("Not allowed to modify Channels.COLUMN_LOCKED");
-            }
+            blockIllegalAccessToSystemColumns(values);
         } else if (params.getTables().equals(PROGRAMS_TABLE)) {
             checkAndConvertGenre(values);
             checkAndConvertDeprecatedColumns(values);
@@ -1274,6 +1277,28 @@ public class TvProvider extends ContentProvider {
         return getContext().checkCallingOrSelfPermission(
                 android.Manifest.permission.MODIFY_PARENTAL_CONTROLS)
                 == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void blockIllegalAccessToSystemColumns(ContentValues values) {
+        if (values.containsKey(Channels.COLUMN_LOCKED)
+                && !callerHasModifyParentalControlsPermission()) {
+            throw new SecurityException("Not allowed to access Channels.COLUMN_LOCKED");
+        }
+        Boolean hasAccessAllEpgDataPermission = null;
+        if (values.containsKey(Channels.COLUMN_BROWSABLE)) {
+            hasAccessAllEpgDataPermission = callerHasAccessAllEpgDataPermission();
+            if (!hasAccessAllEpgDataPermission) {
+                throw new SecurityException("Not allowed to access Channels.COLUMN_BROWSABLE");
+            }
+        }
+        if (values.containsKey(Channels.COLUMN_SYSTEM_APPROVED)) {
+            if (hasAccessAllEpgDataPermission == null) {
+                hasAccessAllEpgDataPermission = callerHasAccessAllEpgDataPermission();
+            }
+            if (!hasAccessAllEpgDataPermission) {
+                throw new SecurityException("Not allowed to access Channels.COLUMN_SYSTEM_APPROVED");
+            }
+        }
     }
 
     @Override
