@@ -17,11 +17,16 @@
 package com.android.providers.tv;
 
 class TvProviderForTesting extends TvProvider {
+    String callingPackage;
+
     @Override
     void scheduleEpgDataCleanup() {}
 
     @Override
     String getCallingPackage_() {
+        if (callingPackage != null) {
+            return callingPackage;
+        }
         return getContext().getPackageName();
     }
 

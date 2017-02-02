@@ -88,5 +88,12 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
             </intent-filter>
         </receiver>
+
+        <!-- Removes channels and programs when some package is fully removed. -->
+        <receiver android:name="PackageRemovedReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.PACKAGE_FULLY_REMOVED"/>
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>
