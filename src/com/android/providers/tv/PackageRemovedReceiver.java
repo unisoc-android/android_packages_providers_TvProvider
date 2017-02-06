@@ -28,6 +28,7 @@ import android.os.RemoteException;
 import android.util.Log;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * This will be launched when PACKAGE_FULLY_REMOVED intent is broadcast.
@@ -69,7 +70,7 @@ public class PackageRemovedReceiver extends BroadcastReceiver {
             if (DEBUG) {
                 Log.d(TAG, "onPackageFullyRemoved(packageName=" + packageName + ", uid=" + uid
                         + ")");
-                Log.d(TAG, "results=" + results);
+                Log.d(TAG, "results=" + Arrays.toString(results));
             }
         }
     }
