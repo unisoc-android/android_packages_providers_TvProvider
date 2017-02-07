@@ -26,8 +26,7 @@ import android.content.pm.ProviderInfo;
 import android.database.Cursor;
 import android.media.tv.TvContract;
 import android.media.tv.TvContract.Channels;
-import android.media.tv.TvContract.Programs;
-import android.media.tv.TvContract.WatchedPrograms;
+import android.media.tv.TvContract.PreviewPrograms;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.SystemClock;
@@ -83,25 +82,25 @@ public class TransientRowHelperTests extends AndroidTestCase {
         super.tearDown();
     }
 
-    private static class Program {
+    private static class PreviewProgram {
         long id;
         final boolean isTransient;
 
-        Program(boolean isTransient) {
+        PreviewProgram(boolean isTransient) {
             this(-1, isTransient);
         }
 
-        Program(long id, boolean isTransient) {
+        PreviewProgram(long id, boolean isTransient) {
             this.id = id;
             this.isTransient = isTransient;
         }
 
         @Override
         public boolean equals(Object obj) {
-            if (!(obj instanceof Program)) {
+            if (!(obj instanceof PreviewProgram)) {
                 return false;
             }
-            Program that = (Program) obj;
+            PreviewProgram that = (PreviewProgram) obj;
             return Objects.equals(id, that.id)
                     && Objects.equals(isTransient, that.isTransient);
         }
@@ -113,7 +112,7 @@ public class TransientRowHelperTests extends AndroidTestCase {
 
         @Override
         public String toString() {
-            return "Program(id=" + id + ",isTransient=" + isTransient + ")";
+            return "PreviewProgram(id=" + id + ",isTransient=" + isTransient + ")";
         }
     }
 
@@ -126,33 +125,33 @@ public class TransientRowHelperTests extends AndroidTestCase {
         return ContentUris.parseId(uri);
     }
 
-    private void insertPrograms(long channelId, Program... programs) {
-        insertPrograms(channelId, Arrays.asList(programs));
+    private void insertPreviewPrograms(long channelId, PreviewProgram... programs) {
+        insertPreviewPrograms(channelId, Arrays.asList(programs));
     }
 
-    private void insertPrograms(long channelId, Collection<Program> programs) {
+    private void insertPreviewPrograms(long channelId, Collection<PreviewProgram> programs) {
         ContentValues values = new ContentValues();
-        values.put(Programs.COLUMN_CHANNEL_ID, channelId);
-        for (Program program : programs) {
-            values.put(Programs.COLUMN_TRANSIENT, program.isTransient ? 1 : 0);
-            Uri uri = mResolver.insert(Programs.CONTENT_URI, values);
+        values.put(PreviewPrograms.COLUMN_CHANNEL_ID, channelId);
+        for (PreviewProgram program : programs) {
+            values.put(PreviewPrograms.COLUMN_TRANSIENT, program.isTransient ? 1 : 0);
+            Uri uri = mResolver.insert(PreviewPrograms.CONTENT_URI, values);
             assertNotNull(uri);
             program.id = ContentUris.parseId(uri);
         }
     }
 
-    private Set<Program> queryPrograms() {
+    private Set<PreviewProgram> queryPreviewPrograms() {
         String[] projection = new String[] {
-            Programs._ID,
-            Programs.COLUMN_TRANSIENT,
+            PreviewPrograms._ID,
+            PreviewPrograms.COLUMN_TRANSIENT,
         };
 
-        Cursor cursor = mResolver.query(Programs.CONTENT_URI, projection, null, null, null);
+        Cursor cursor = mResolver.query(PreviewPrograms.CONTENT_URI, projection, null, null, null);
         assertNotNull(cursor);
         try {
-            Set<Program> programs = Sets.newHashSet();
+            Set<PreviewProgram> programs = Sets.newHashSet();
             while (cursor.moveToNext()) {
-                programs.add(new Program(cursor.getLong(0), cursor.getInt(1) == 1));
+                programs.add(new PreviewProgram(cursor.getLong(0), cursor.getInt(1) == 1));
             }
             return programs;
         } finally {
@@ -175,27 +174,32 @@ public class TransientRowHelperTests extends AndroidTestCase {
     }
 
     public void testTransientRowsAreDeletedAfterReboot() {
-        Program transientProgramInTransientChannel = new Program(true /* transient */);
-        Program permanentProgramInTransientChannel = new Program(false /* transient */);
-        Program transientProgramInPermanentChannel = new Program(true /* transient */);
-        Program permanentProgramInPermanentChannel = new Program(false /* transient */);
+        PreviewProgram transientProgramInTransientChannel =
+                new PreviewProgram(true /* transient */);
+        PreviewProgram permanentProgramInTransientChannel =
+                new PreviewProgram(false /* transient */);
+        PreviewProgram transientProgramInPermanentChannel =
+                new PreviewProgram(true /* transient */);
+        PreviewProgram permanentProgramInPermanentChannel =
+                new PreviewProgram(false /* transient */);
         long transientChannelId = insertChannel(true /* transient */);
         long permanentChannelId = insertChannel(false /* transient */);
-        insertPrograms(transientChannelId, transientProgramInTransientChannel);
-        insertPrograms(transientChannelId, permanentProgramInTransientChannel);
-        insertPrograms(permanentChannelId, transientProgramInPermanentChannel);
-        insertPrograms(permanentChannelId, permanentProgramInPermanentChannel);
+        insertPreviewPrograms(transientChannelId, transientProgramInTransientChannel);
+        insertPreviewPrograms(transientChannelId, permanentProgramInTransientChannel);
+        insertPreviewPrograms(permanentChannelId, transientProgramInPermanentChannel);
+        insertPreviewPrograms(permanentChannelId, permanentProgramInPermanentChannel);
 
         assertEquals("Before reboot all the programs inserted should exist.",
-                Sets.newHashSet(transientProgramInTransientChannel, permanentProgramInTransientChannel,
-                        transientProgramInPermanentChannel, permanentProgramInPermanentChannel),
-                queryPrograms());
+                Sets.newHashSet(transientProgramInTransientChannel,
+                        permanentProgramInTransientChannel, transientProgramInPermanentChannel,
+                        permanentProgramInPermanentChannel),
+                queryPreviewPrograms());
         assertEquals("Before reboot the channels inserted should exist.",
                 2, getChannelCount());
 
         mTransientRowHelper.simulateReboot();
         assertEquals("Transient program and programs in transient channel should be removed.",
-                Sets.newHashSet(permanentProgramInPermanentChannel), queryPrograms());
+                Sets.newHashSet(permanentProgramInPermanentChannel), queryPreviewPrograms());
         assertEquals("Transient channel should not be removed.",
                 1, getChannelCount());
     }
