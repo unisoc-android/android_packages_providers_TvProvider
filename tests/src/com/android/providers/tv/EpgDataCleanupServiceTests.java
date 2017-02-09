@@ -74,11 +74,13 @@ public class EpgDataCleanupServiceTests extends ServiceTestCase<EpgDataCleanupSe
         info.authority = TvContract.AUTHORITY;
         mProvider.attachInfoForTesting(getContext(), info);
 
+        Utils.clearTvProvider(mResolver);
         startService(new Intent(getContext(), EpgDataCleanupService.class));
     }
 
     @Override
     protected void tearDown() throws Exception {
+        Utils.clearTvProvider(mResolver);
         mProvider.shutdown();
         super.tearDown();
     }

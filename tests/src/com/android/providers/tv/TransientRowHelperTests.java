@@ -73,13 +73,12 @@ public class TransientRowHelperTests extends AndroidTestCase {
         mProvider.attachInfoForTesting(getContext(), info);
         mTransientRowHelper = new RebootSimulatingTransientRowHelper(getContext());
         mProvider.setTransientRowHelper(mTransientRowHelper);
+        Utils.clearTvProvider(mResolver);
     }
 
     @Override
     protected void tearDown() throws Exception {
-        mResolver.delete(Channels.CONTENT_URI, null, null);
-        mResolver.delete(Programs.CONTENT_URI, null, null);
-        mResolver.delete(WatchedPrograms.CONTENT_URI, null, null);
+        Utils.clearTvProvider(mResolver);
         mProvider.shutdown();
         super.tearDown();
     }

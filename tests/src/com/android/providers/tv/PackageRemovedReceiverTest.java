@@ -26,7 +26,6 @@ import android.database.Cursor;
 import android.media.tv.TvContract;
 import android.media.tv.TvContract.Channels;
 import android.media.tv.TvContract.Programs;
-import android.media.tv.TvContract.WatchedPrograms;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -71,13 +70,12 @@ public class PackageRemovedReceiverTest extends AndroidTestCase {
         mProvider.attachInfoForTesting(getContext(), info);
 
         mReceiver = new PackageRemovedReceiver();
+        Utils.clearTvProvider(mResolver);
     }
 
     @Override
     protected void tearDown() throws Exception {
-        mResolver.delete(Channels.CONTENT_URI, null, null);
-        mResolver.delete(Programs.CONTENT_URI, null, null);
-        mResolver.delete(WatchedPrograms.CONTENT_URI, null, null);
+        Utils.clearTvProvider(mResolver);
         mProvider.shutdown();
         super.tearDown();
     }

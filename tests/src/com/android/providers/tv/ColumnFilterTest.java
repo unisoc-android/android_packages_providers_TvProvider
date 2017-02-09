@@ -57,11 +57,12 @@ public class ColumnFilterTest extends AndroidTestCase {
         final ProviderInfo info = new ProviderInfo();
         info.authority = TvContract.AUTHORITY;
         mProvider.attachInfoForTesting(getContext(), info);
+        Utils.clearTvProvider(mResolver);
     }
 
     @Override
     protected void tearDown() throws Exception {
-        mResolver.delete(Channels.CONTENT_URI, null, null);
+        Utils.clearTvProvider(mResolver);
         mProvider.shutdown();
         super.tearDown();
     }
