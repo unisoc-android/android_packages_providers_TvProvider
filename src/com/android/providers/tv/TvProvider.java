@@ -186,6 +186,8 @@ public class TvProvider extends ContentProvider {
                 CHANNELS_TABLE + "." + Channels.COLUMN_APP_LINK_COLOR);
         sChannelProjectionMap.put(Channels.COLUMN_APP_LINK_INTENT_URI,
                 CHANNELS_TABLE + "." + Channels.COLUMN_APP_LINK_INTENT_URI);
+        sChannelProjectionMap.put(Channels.COLUMN_INTERNAL_PROVIDER_ID,
+                CHANNELS_TABLE + "." + Channels.COLUMN_INTERNAL_PROVIDER_ID);
         sChannelProjectionMap.put(Channels.COLUMN_INTERNAL_PROVIDER_DATA,
                 CHANNELS_TABLE + "." + Channels.COLUMN_INTERNAL_PROVIDER_DATA);
         sChannelProjectionMap.put(Channels.COLUMN_INTERNAL_PROVIDER_FLAG1,
@@ -480,6 +482,7 @@ public class TvProvider extends ContentProvider {
                     + Channels.COLUMN_VERSION_NUMBER + " INTEGER,"
                     + Channels.COLUMN_TRANSIENT + " INTEGER NOT NULL DEFAULT 0,"
                     + Channels.COLUMN_SYSTEM_APPROVED + " INTEGER NOT NULL DEFAULT 0,"
+                    + Channels.COLUMN_INTERNAL_PROVIDER_ID + " TEXT,"
                     // Needed for foreign keys in other tables.
                     + "UNIQUE(" + Channels._ID + "," + Channels.COLUMN_PACKAGE_NAME + ")"
                     + ");");
@@ -704,6 +707,8 @@ public class TvProvider extends ContentProvider {
                         + Channels.COLUMN_SYSTEM_APPROVED + " INTEGER NOT NULL DEFAULT 0;");
                 db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
                         + Programs.COLUMN_BROWSABLE + " INTEGER NOT NULL DEFAULT 1;");
+                db.execSQL("ALTER TABLE " + CHANNELS_TABLE + " ADD "
+                        + Channels.COLUMN_INTERNAL_PROVIDER_ID + " TEXT;");
                 oldVersion = 33;
             }
             Log.i(TAG, "Upgrading from version " + oldVersion + " to " + newVersion + " is done.");
