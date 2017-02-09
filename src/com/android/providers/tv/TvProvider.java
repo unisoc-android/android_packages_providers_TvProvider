@@ -65,6 +65,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -704,6 +705,28 @@ public class TvProvider extends ContentProvider {
             Log.i(TAG, "Upgrading from version " + oldVersion + " to " + newVersion + " is done.");
         }
 
+        @Override
+        public void onOpen(SQLiteDatabase db) {
+            buildProjectionMap(db);
+        }
+
+        private void buildProjectionMap(SQLiteDatabase db) {
+            updateProjectionMap(db, CHANNELS_TABLE, sChannelProjectionMap);
+            updateProjectionMap(db, PROGRAMS_TABLE, sProgramProjectionMap);
+            updateProjectionMap(db, RECORDED_PROGRAMS_TABLE, sRecordedProgramProjectionMap);
+        }
+
+        private void updateProjectionMap(SQLiteDatabase db, String tableName,
+                Map<String, String> projectionMap) {
+            try(Cursor cursor = db.rawQuery("SELECT * FROM " + tableName + " LIMIT 0", null)) {
+                for (String columnName : cursor.getColumnNames()) {
+                    if (!projectionMap.containsKey(columnName)) {
+                        projectionMap.put(columnName, tableName + '.' + columnName);
+                    }
+                }
+            }
+        }
+
         private static void migrateIntegerColumnToTextColumn(SQLiteDatabase db, String table,
                 String integerColumn, String textColumn) {
             db.execSQL("ALTER TABLE " + table + " ADD " + textColumn + " TEXT;");
@@ -836,7 +859,7 @@ public class TvProvider extends ContentProvider {
                 projectionMap = sChannelProjectionMap;
                 break;
         }
-        queryBuilder.setProjectionMap(projectionMap);
+        queryBuilder.setProjectionMap(createProjectionMapForQuery(projection, projectionMap));
         if (needsToValidateSortOrder) {
             validateSortOrder(sortOrder, projectionMap.keySet());
         }
@@ -861,12 +884,15 @@ public class TvProvider extends ContentProvider {
         mTransientRowHelper.ensureOldTransientRowsDeleted();
         switch (sUriMatcher.match(uri)) {
             case MATCH_CHANNEL:
+                filterContentValues(values, sChannelProjectionMap);
                 return insertChannel(uri, values);
             case MATCH_PROGRAM:
+                filterContentValues(values, sProgramProjectionMap);
                 return insertProgram(uri, values);
             case MATCH_WATCHED_PROGRAM:
                 return insertWatchedProgram(uri, values);
             case MATCH_RECORDED_PROGRAM:
+                filterContentValues(values, sRecordedProgramProjectionMap);
                 return insertRecordedProgram(uri, values);
             case MATCH_CHANNEL_ID:
             case MATCH_CHANNEL_ID_LOGO:
@@ -1003,12 +1029,19 @@ public class TvProvider extends ContentProvider {
         mTransientRowHelper.ensureOldTransientRowsDeleted();
         SqlParams params = createSqlParams(OP_UPDATE, uri, selection, selectionArgs);
         if (params.getTables().equals(CHANNELS_TABLE)) {
+            filterContentValues(values, sChannelProjectionMap);
             blockIllegalAccessToSystemColumns(values);
         } else if (params.getTables().equals(PROGRAMS_TABLE)) {
+            filterContentValues(values, sProgramProjectionMap);
             checkAndConvertGenre(values);
             checkAndConvertDeprecatedColumns(values);
         } else if (params.getTables().equals(RECORDED_PROGRAMS_TABLE)) {
+            filterContentValues(values, sRecordedProgramProjectionMap);
             checkAndConvertGenre(values);
+        }
+        if (values.size() == 0) {
+            // All values may be filtered out, no need to update
+            return 0;
         }
         SQLiteDatabase db = mOpenHelper.getWritableDatabase();
         int count = db.update(params.getTables(), values, params.getSelection(),
@@ -1017,6 +1050,27 @@ public class TvProvider extends ContentProvider {
             notifyChange(uri);
         }
         return count;
+    }
+
+    private Map<String, String> createProjectionMapForQuery(String[] projection,
+            Map<String, String> projectionMap) {
+        Map<String, String> columnProjectionMap = new HashMap<>();
+        for (String columnName : projection) {
+            // Value NULL will be provided if the requested column does not exist in the database.
+            columnProjectionMap.put(columnName,
+                    projectionMap.getOrDefault(columnName, "NULL as " + columnName));
+        }
+        return columnProjectionMap;
+    }
+
+    private void filterContentValues(ContentValues values, Map<String, String> projectionMap) {
+        Iterator<String> iter = values.keySet().iterator();
+        while (iter.hasNext()) {
+            String columnName = iter.next();
+            if (!projectionMap.containsKey(columnName)) {
+                iter.remove();
+            }
+        }
     }
 
     private SqlParams createSqlParams(String operation, Uri uri, String selection,
