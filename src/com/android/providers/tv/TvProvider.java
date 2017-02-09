@@ -1054,6 +1054,9 @@ public class TvProvider extends ContentProvider {
 
     private Map<String, String> createProjectionMapForQuery(String[] projection,
             Map<String, String> projectionMap) {
+        if (projection == null) {
+            return projectionMap;
+        }
         Map<String, String> columnProjectionMap = new HashMap<>();
         for (String columnName : projection) {
             // Value NULL will be provided if the requested column does not exist in the database.
