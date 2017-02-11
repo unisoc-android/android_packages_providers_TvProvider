@@ -88,9 +88,9 @@ public class ColumnFilterTest extends AndroidTestCase {
         Cursor cursor = mResolver.query(Channels.CONTENT_URI, projection, null, null, null);
         assertNotNull(cursor);
         cursor.moveToNext();
-        assertEquals(cursor.getString(0), FAKE_INPUT_ID);
+        assertEquals(FAKE_INPUT_ID, cursor.getString(0));
         assertNull(cursor.getString(1));
-        assertEquals(cursor.getLong(2), channelId);
+        assertEquals(channelId, cursor.getLong(2));
     }
 
     public void testQueryChannelWithNullProjection() {
@@ -109,7 +109,7 @@ public class ColumnFilterTest extends AndroidTestCase {
         assertNotNull(cursor);
         cursor.moveToNext();
         assertNull(cursor.getString(0));
-        assertEquals(cursor.getInt(0), 0);
+        assertEquals(0, cursor.getInt(0));
     }
 
     public void testInsertAndQueryChannel() {
@@ -122,9 +122,9 @@ public class ColumnFilterTest extends AndroidTestCase {
         Cursor cursor = mResolver.query(Channels.CONTENT_URI, projection, null, null, null);
         assertNotNull(cursor);
         cursor.moveToNext();
-        assertEquals(cursor.getString(0), FAKE_INPUT_ID);
+        assertEquals(FAKE_INPUT_ID, cursor.getString(0));
         assertNull(cursor.getString(1));
-        assertEquals(cursor.getLong(2), channelId);
+        assertEquals(channelId, cursor.getLong(2));
     }
 
     public void testUpdateChannel() {
@@ -140,8 +140,8 @@ public class ColumnFilterTest extends AndroidTestCase {
         Cursor cursor = mResolver.query(Channels.CONTENT_URI, projection, null, null, null);
         assertNotNull(cursor);
         cursor.moveToNext();
-        assertEquals(cursor.getString(0), FAKE_INPUT_ID);
+        assertEquals(FAKE_INPUT_ID, cursor.getString(0));
         assertNull(cursor.getString(1));
-        assertEquals(cursor.getLong(2), channelId);
+        assertEquals(channelId, cursor.getLong(2));
     }
 }
