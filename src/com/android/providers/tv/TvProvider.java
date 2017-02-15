@@ -237,6 +237,7 @@ public class TvProvider extends ContentProvider {
         sProgramProjectionMap.put(Programs.COLUMN_POSTER_ART_URI, Programs.COLUMN_POSTER_ART_URI);
         sProgramProjectionMap.put(Programs.COLUMN_THUMBNAIL_URI, Programs.COLUMN_THUMBNAIL_URI);
         sProgramProjectionMap.put(Programs.COLUMN_SEARCHABLE, Programs.COLUMN_SEARCHABLE);
+        sProgramProjectionMap.put(Programs.COLUMN_BROWSABLE, Programs.COLUMN_BROWSABLE);
         sProgramProjectionMap.put(Programs.COLUMN_RECORDING_PROHIBITED,
                 Programs.COLUMN_RECORDING_PROHIBITED);
         sProgramProjectionMap.put(Programs.COLUMN_INTERNAL_PROVIDER_DATA,
@@ -504,6 +505,7 @@ public class TvProvider extends ContentProvider {
                     + Programs.COLUMN_POSTER_ART_URI + " TEXT,"
                     + Programs.COLUMN_THUMBNAIL_URI + " TEXT,"
                     + Programs.COLUMN_SEARCHABLE + " INTEGER NOT NULL DEFAULT 1,"
+                    + Programs.COLUMN_BROWSABLE + " INTEGER NOT NULL DEFAULT 1,"
                     + Programs.COLUMN_RECORDING_PROHIBITED + " INTEGER NOT NULL DEFAULT 0,"
                     + Programs.COLUMN_INTERNAL_PROVIDER_DATA + " BLOB,"
                     + Programs.COLUMN_INTERNAL_PROVIDER_FLAG1 + " INTEGER,"
@@ -700,6 +702,8 @@ public class TvProvider extends ContentProvider {
                         + Programs.COLUMN_REVIEW_RATING + " TEXT;");
                 db.execSQL("ALTER TABLE " + CHANNELS_TABLE + " ADD "
                         + Channels.COLUMN_SYSTEM_APPROVED + " INTEGER NOT NULL DEFAULT 0;");
+                db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
+                        + Programs.COLUMN_BROWSABLE + " INTEGER NOT NULL DEFAULT 1;");
                 oldVersion = 33;
             }
             Log.i(TAG, "Upgrading from version " + oldVersion + " to " + newVersion + " is done.");
@@ -909,7 +913,7 @@ public class TvProvider extends ContentProvider {
     private Uri insertChannel(Uri uri, ContentValues values) {
         // Mark the owner package of this channel.
         values.put(Channels.COLUMN_PACKAGE_NAME, getCallingPackage_());
-        blockIllegalAccessToSystemColumns(values);
+        blockIllegalAccessToChannelsSystemColumns(values);
 
         SQLiteDatabase db = mOpenHelper.getWritableDatabase();
         long rowId = db.insert(CHANNELS_TABLE, null, values);
@@ -925,6 +929,7 @@ public class TvProvider extends ContentProvider {
     private Uri insertProgram(Uri uri, ContentValues values) {
         // Mark the owner package of this program.
         values.put(Programs.COLUMN_PACKAGE_NAME, getCallingPackage_());
+        blockIllegalAccessToProgramsSystemColumns(values);
 
         checkAndConvertGenre(values);
         checkAndConvertDeprecatedColumns(values);
@@ -1030,9 +1035,10 @@ public class TvProvider extends ContentProvider {
         SqlParams params = createSqlParams(OP_UPDATE, uri, selection, selectionArgs);
         if (params.getTables().equals(CHANNELS_TABLE)) {
             filterContentValues(values, sChannelProjectionMap);
-            blockIllegalAccessToSystemColumns(values);
+            blockIllegalAccessToChannelsSystemColumns(values);
         } else if (params.getTables().equals(PROGRAMS_TABLE)) {
             filterContentValues(values, sProgramProjectionMap);
+            blockIllegalAccessToProgramsSystemColumns(values);
             checkAndConvertGenre(values);
             checkAndConvertDeprecatedColumns(values);
         } else if (params.getTables().equals(RECORDED_PROGRAMS_TABLE)) {
@@ -1336,7 +1342,7 @@ public class TvProvider extends ContentProvider {
                 == PackageManager.PERMISSION_GRANTED;
     }
 
-    private void blockIllegalAccessToSystemColumns(ContentValues values) {
+    private void blockIllegalAccessToChannelsSystemColumns(ContentValues values) {
         if (values.containsKey(Channels.COLUMN_LOCKED)
                 && !callerHasModifyParentalControlsPermission()) {
             throw new SecurityException("Not allowed to access Channels.COLUMN_LOCKED");
@@ -1353,8 +1359,16 @@ public class TvProvider extends ContentProvider {
                 hasAccessAllEpgDataPermission = callerHasAccessAllEpgDataPermission();
             }
             if (!hasAccessAllEpgDataPermission) {
-                throw new SecurityException("Not allowed to access Channels.COLUMN_SYSTEM_APPROVED");
+                throw new SecurityException(
+                        "Not allowed to access Channels.COLUMN_SYSTEM_APPROVED");
             }
+        }
+    }
+
+    private void blockIllegalAccessToProgramsSystemColumns(ContentValues values) {
+        if (values.containsKey(Programs.COLUMN_BROWSABLE)
+                && !callerHasAccessAllEpgDataPermission()) {
+            throw new SecurityException("Not allowed to access Programs.COLUMN_BROWSABLE");
         }
     }
 
