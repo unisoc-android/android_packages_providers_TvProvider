@@ -47,7 +47,7 @@ public class EpgDataCleanupServiceTests extends ServiceTestCase<EpgDataCleanupSe
     private static final String FAKE_INPUT_ID = "EpgDataCleanupServiceTests";
 
     private MockContentResolver mResolver;
-    private TvProvider mProvider;
+    private TvProviderForTesting mProvider;
 
     public EpgDataCleanupServiceTests() {
         super(EpgDataCleanupService.class);
@@ -182,7 +182,7 @@ public class EpgDataCleanupServiceTests extends ServiceTestCase<EpgDataCleanupSe
         for (Program program : programs) {
             values.put(WatchedPrograms.COLUMN_WATCH_START_TIME_UTC_MILLIS, program.startTime);
             values.put(WatchedPrograms.COLUMN_WATCH_END_TIME_UTC_MILLIS, program.endTime);
-            Uri uri = mResolver.insert(WatchedPrograms.CONTENT_URI, values);
+            Uri uri = mProvider.insertWatchedProgramSync(values);
             assertNotNull(uri);
             program.id = ContentUris.parseId(uri);
         }
@@ -238,7 +238,6 @@ public class EpgDataCleanupServiceTests extends ServiceTestCase<EpgDataCleanupSe
 
     // Disable temporarily since it's not trivial to fix due to asynchronous implementation of
     // watch history management.
-    @Suppress
     public void testClearOldWatchedPrograms() {
         Program program = new Program(1, 2);
         insertWatchedPrograms(program);
@@ -264,7 +263,6 @@ public class EpgDataCleanupServiceTests extends ServiceTestCase<EpgDataCleanupSe
 
     // Disable temporarily since it's not trivial to fix due to asynchronous implementation of
     // watch history management.
-    @Suppress
     public void testClearOverflowWatchHistory() {
         ArrayList<Program> programs = new ArrayList<Program>();
         for (int i = 0; i < 10; i++) {

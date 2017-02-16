@@ -16,7 +16,14 @@
 
 package com.android.providers.tv;
 
+import android.content.ContentValues;
+import android.database.sqlite.SQLiteDatabase;
+import android.media.tv.TvContract;
+import android.net.Uri;
+
 class TvProviderForTesting extends TvProvider {
+    private static final String FAKE_SESSION_TOKEN = "TvProviderForTesting";
+
     String callingPackage;
 
     @Override
@@ -32,5 +39,15 @@ class TvProviderForTesting extends TvProvider {
 
     void setTransientRowHelper(TransientRowHelper helper) {
         mTransientRowHelper = helper;
+    }
+
+    // This method is a bypass for testing to avoid async'ly updating restriction of TvProvider
+    Uri insertWatchedProgramSync(ContentValues values) {
+        values.put(WATCHED_PROGRAMS_COLUMN_CONSOLIDATED, 1);
+        values.put(TvContract.WatchedPrograms.COLUMN_INTERNAL_SESSION_TOKEN, FAKE_SESSION_TOKEN);
+        DatabaseHelper helper = DatabaseHelper.getInstance(getContext());
+        SQLiteDatabase db = helper.getWritableDatabase();
+        long rowId = db.insert(WATCHED_PROGRAMS_TABLE, null, values);
+        return TvContract.buildWatchedProgramUri(rowId);
     }
 }

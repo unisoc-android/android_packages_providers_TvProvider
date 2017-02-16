@@ -81,9 +81,12 @@ public class TvProvider extends ContentProvider {
     static final int DATABASE_VERSION = 33;
     static final String CHANNELS_TABLE = "channels";
     static final String PREVIEW_PROGRAMS_TABLE = "preview_programs";
+    static final String WATCHED_PROGRAMS_TABLE = "watched_programs";
+    // The internal column in the watched programs table to indicate whether the current log entry
+    // is consolidated or not. Unconsolidated entries may have columns with missing data.
+    static final String WATCHED_PROGRAMS_COLUMN_CONSOLIDATED = "consolidated";
     private static final String DATABASE_NAME = "tv.db";
     private static final String PROGRAMS_TABLE = "programs";
-    private static final String WATCHED_PROGRAMS_TABLE = "watched_programs";
     private static final String RECORDED_PROGRAMS_TABLE = "recorded_programs";
     private static final String DELETED_CHANNELS_TABLE = "deleted_channels";  // Deprecated
     private static final String PROGRAMS_TABLE_PACKAGE_NAME_INDEX = "programs_package_name_index";
@@ -123,10 +126,6 @@ public class TvProvider extends ContentProvider {
 
     private static final String CHANNELS_COLUMN_LOGO = "logo";
     private static final int MAX_LOGO_IMAGE_SIZE = 256;
-
-    // The internal column in the watched programs table to indicate whether the current log entry
-    // is consolidated or not. Unconsolidated entries may have columns with missing data.
-    private static final String WATCHED_PROGRAMS_COLUMN_CONSOLIDATED = "consolidated";
 
     private static final long MAX_PROGRAM_DATA_DELAY_IN_MILLIS = 10 * 1000; // 10 seconds
 
