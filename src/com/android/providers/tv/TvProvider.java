@@ -192,8 +192,6 @@ public class TvProvider extends ContentProvider {
                 CHANNELS_TABLE + "." + Channels.COLUMN_APP_LINK_COLOR);
         sChannelProjectionMap.put(Channels.COLUMN_APP_LINK_INTENT_URI,
                 CHANNELS_TABLE + "." + Channels.COLUMN_APP_LINK_INTENT_URI);
-        sChannelProjectionMap.put(Channels.COLUMN_INTERNAL_PROVIDER_ID,
-                CHANNELS_TABLE + "." + Channels.COLUMN_INTERNAL_PROVIDER_ID);
         sChannelProjectionMap.put(Channels.COLUMN_INTERNAL_PROVIDER_DATA,
                 CHANNELS_TABLE + "." + Channels.COLUMN_INTERNAL_PROVIDER_DATA);
         sChannelProjectionMap.put(Channels.COLUMN_INTERNAL_PROVIDER_FLAG1,
@@ -210,6 +208,8 @@ public class TvProvider extends ContentProvider {
                 CHANNELS_TABLE + "." + Channels.COLUMN_TRANSIENT);
         sChannelProjectionMap.put(Channels.COLUMN_SYSTEM_APPROVED,
                 CHANNELS_TABLE + "." + Channels.COLUMN_SYSTEM_APPROVED);
+        sChannelProjectionMap.put(Channels.COLUMN_INTERNAL_PROVIDER_ID,
+                CHANNELS_TABLE + "." + Channels.COLUMN_INTERNAL_PROVIDER_ID);
 
         sProgramProjectionMap = new HashMap<>();
         sProgramProjectionMap.put(Programs._ID, Programs._ID);
@@ -1057,7 +1057,6 @@ public class TvProvider extends ContentProvider {
     private Uri insertRecordedProgram(Uri uri, ContentValues values) {
         // Mark the owner package of this program.
         values.put(Programs.COLUMN_PACKAGE_NAME, getCallingPackage_());
-        blockIllegalAccessToPreviewProgramsSystemColumns(values);
 
         checkAndConvertGenre(values);
 
@@ -1075,6 +1074,7 @@ public class TvProvider extends ContentProvider {
     private Uri insertPreviewProgram(Uri uri, ContentValues values) {
         // Mark the owner package of this program.
         values.put(Programs.COLUMN_PACKAGE_NAME, getCallingPackage_());
+        blockIllegalAccessToPreviewProgramsSystemColumns(values);
 
         SQLiteDatabase db = mOpenHelper.getWritableDatabase();
         long rowId = db.insert(PREVIEW_PROGRAMS_TABLE, null, values);
