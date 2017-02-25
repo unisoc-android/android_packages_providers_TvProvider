@@ -46,6 +46,7 @@ import android.media.tv.TvContract.RecordedPrograms;
 import android.media.tv.TvContract.WatchedPrograms;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.ParcelFileDescriptor;
@@ -134,6 +135,7 @@ public class TvProvider extends ContentProvider {
     private static final Map<String, String> sWatchedProgramProjectionMap;
     private static final Map<String, String> sRecordedProgramProjectionMap;
     private static final Map<String, String> sPreviewProgramProjectionMap;
+    private static boolean sProjectionMapsUpdated;
 
     static {
         sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
@@ -781,9 +783,13 @@ public class TvProvider extends ContentProvider {
         }
 
         private void buildProjectionMap(SQLiteDatabase db) {
-            updateProjectionMap(db, CHANNELS_TABLE, sChannelProjectionMap);
-            updateProjectionMap(db, PROGRAMS_TABLE, sProgramProjectionMap);
-            updateProjectionMap(db, RECORDED_PROGRAMS_TABLE, sRecordedProgramProjectionMap);
+            if (!sProjectionMapsUpdated) {
+                updateProjectionMap(db, CHANNELS_TABLE, sChannelProjectionMap);
+                updateProjectionMap(db, PROGRAMS_TABLE, sProgramProjectionMap);
+                updateProjectionMap(db, PREVIEW_PROGRAMS_TABLE, sPreviewProgramProjectionMap);
+                updateProjectionMap(db, RECORDED_PROGRAMS_TABLE, sRecordedProgramProjectionMap);
+                sProjectionMapsUpdated = true;
+            }
         }
 
         private void updateProjectionMap(SQLiteDatabase db, String tableName,
@@ -903,6 +909,88 @@ public class TvProvider extends ContentProvider {
             default:
                 throw new IllegalArgumentException("Unknown URI " + uri);
         }
+    }
+
+    @Override
+    public Bundle call(String method, String arg, Bundle extras) {
+        if (!callerHasAccessAllEpgDataPermission()) {
+            return null;
+        }
+        if (!sProjectionMapsUpdated) {
+            // Database is not accessed before and the projection maps are not updated yet.
+            // Gets database here to make it initialized.
+            mOpenHelper.getReadableDatabase().close();
+        }
+        Map<String, String> projectionMap;
+        switch (method) {
+            case TvContract.METHOD_GET_COLUMNS:
+                switch (sUriMatcher.match(Uri.parse(arg))) {
+                    case MATCH_CHANNEL:
+                        projectionMap = sChannelProjectionMap;
+                        break;
+                    case MATCH_PROGRAM:
+                        projectionMap = sProgramProjectionMap;
+                        break;
+                    case MATCH_PREVIEW_PROGRAM:
+                        projectionMap = sPreviewProgramProjectionMap;
+                        break;
+                    case MATCH_RECORDED_PROGRAM:
+                        projectionMap = sRecordedProgramProjectionMap;
+                        break;
+                    default:
+                        return null;
+                }
+                Bundle result = new Bundle();
+                result.putStringArray(TvContract.EXTRA_EXISTING_COLUMN_NAMES,
+                        projectionMap.keySet().toArray(new String[projectionMap.size()]));
+                return result;
+            case TvContract.METHOD_ADD_COLUMN:
+                CharSequence columnName = extras.getCharSequence(TvContract.EXTRA_COLUMN_NAME);
+                CharSequence dataType = extras.getCharSequence(TvContract.EXTRA_DATA_TYPE);
+                if (TextUtils.isEmpty(columnName) || TextUtils.isEmpty(dataType)) {
+                    return null;
+                }
+                CharSequence defaultValue = extras.getCharSequence(TvContract.EXTRA_DEFAULT_VALUE);
+                try {
+                    defaultValue = TextUtils.isEmpty(defaultValue) ? "" : generateDefaultClause(
+                            dataType.toString(), defaultValue.toString());
+                } catch (IllegalArgumentException e) {
+                    return null;
+                }
+                String tableName;
+                switch (sUriMatcher.match(Uri.parse(arg))) {
+                    case MATCH_CHANNEL:
+                        tableName = CHANNELS_TABLE;
+                        projectionMap = sChannelProjectionMap;
+                        break;
+                    case MATCH_PROGRAM:
+                        tableName = PROGRAMS_TABLE;
+                        projectionMap = sProgramProjectionMap;
+                        break;
+                    case MATCH_PREVIEW_PROGRAM:
+                        tableName = PREVIEW_PROGRAMS_TABLE;
+                        projectionMap = sPreviewProgramProjectionMap;
+                        break;
+                    case MATCH_RECORDED_PROGRAM:
+                        tableName = RECORDED_PROGRAMS_TABLE;
+                        projectionMap = sRecordedProgramProjectionMap;
+                        break;
+                    default:
+                        return null;
+                }
+                try (SQLiteDatabase db = mOpenHelper.getWritableDatabase()) {
+                    db.execSQL("ALTER TABLE " + tableName + " ADD "
+                            + columnName + " " + dataType + defaultValue + ";");
+                    projectionMap.put(columnName.toString(), tableName + '.' + columnName);
+                    Bundle returnValue = new Bundle();
+                    returnValue.putStringArray(TvContract.EXTRA_EXISTING_COLUMN_NAMES,
+                            projectionMap.keySet().toArray(new String[projectionMap.size()]));
+                    return returnValue;
+                } catch (SQLException e) {
+                    return null;
+                }
+        }
+        return null;
     }
 
     @Override
@@ -1306,6 +1394,23 @@ public class TvProvider extends ContentProvider {
                 throw new IllegalArgumentException("Unknown URI " + uri);
         }
         return params;
+    }
+
+    private static String generateDefaultClause(String dataType, String defaultValue)
+            throws IllegalArgumentException {
+        String defaultValueString = " DEFAULT ";
+        switch (dataType.toLowerCase()) {
+            case "integer":
+                return defaultValueString + Integer.parseInt(defaultValue);
+            case "real":
+                return defaultValueString + Double.parseDouble(defaultValue);
+            case "text":
+            case "blob":
+                return defaultValueString + DatabaseUtils.sqlEscapeString(defaultValue);
+            default:
+                throw new IllegalArgumentException("Illegal data type \"" + dataType
+                        + "\" with default value: " + defaultValue);
+        }
     }
 
     private static String capitalize(String str) {
