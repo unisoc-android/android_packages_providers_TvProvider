@@ -1418,6 +1418,7 @@ public class TvProvider extends ContentProvider {
     public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
         mTransientRowHelper.ensureOldTransientRowsDeleted();
         SqlParams params = createSqlParams(OP_UPDATE, uri, selection, selectionArgs);
+        boolean containUnmodifiableColumn = false;
         if (params.getTables().equals(CHANNELS_TABLE)) {
             filterContentValues(values, sChannelProjectionMap);
             blockIllegalAccessToChannelsSystemColumns(values);
@@ -1430,6 +1431,12 @@ public class TvProvider extends ContentProvider {
             checkAndConvertGenre(values);
         } else if (params.getTables().equals(PREVIEW_PROGRAMS_TABLE)) {
             filterContentValues(values, sPreviewProgramProjectionMap);
+            containUnmodifiableColumn = disallowModifyChannelId(values, params);
+            if (containUnmodifiableColumn && PreviewPrograms.CONTENT_URI.equals(uri)) {
+                Log.i(TAG, "Updating failed. Attempt to change unmodifiable column for "
+                        + "preview programs.");
+                return 0;
+            }
             blockIllegalAccessToPreviewProgramsSystemColumns(values);
         } else if (params.getTables().equals(WATCH_NEXT_PROGRAMS_TABLE)) {
             filterContentValues(values, sWatchNextProgramProjectionMap);
@@ -1444,6 +1451,9 @@ public class TvProvider extends ContentProvider {
                 params.getSelectionArgs());
         if (count > 0) {
             notifyChange(uri);
+        } else if (containUnmodifiableColumn) {
+            Log.i(TAG, "Updating failed. The item may not exist or attempt to change "
+                    + "unmodifiable column.");
         }
         return count;
     }
@@ -1794,6 +1804,15 @@ public class TvProvider extends ContentProvider {
                 && !callerHasAccessAllEpgDataPermission()) {
             throw new SecurityException("Not allowed to access Programs.COLUMN_BROWSABLE");
         }
+    }
+
+    private boolean disallowModifyChannelId(ContentValues values, SqlParams params) {
+        if (values.containsKey(PreviewPrograms.COLUMN_CHANNEL_ID)) {
+            params.appendWhere(Programs.COLUMN_CHANNEL_ID + "=?",
+                    values.getAsString(PreviewPrograms.COLUMN_CHANNEL_ID));
+            return true;
+        }
+        return false;
     }
 
     @Override
