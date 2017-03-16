@@ -1421,6 +1421,11 @@ public class TvProvider extends ContentProvider {
         boolean containUnmodifiableColumn = false;
         if (params.getTables().equals(CHANNELS_TABLE)) {
             filterContentValues(values, sChannelProjectionMap);
+            containUnmodifiableColumn = disallowModifyChannelType(values, params);
+            if (containUnmodifiableColumn && Channels.CONTENT_URI.equals(uri)) {
+                Log.i(TAG, "Updating failed. Attempt to change unmodifiable column for channels.");
+                return 0;
+            }
             blockIllegalAccessToChannelsSystemColumns(values);
         } else if (params.getTables().equals(PROGRAMS_TABLE)) {
             filterContentValues(values, sProgramProjectionMap);
@@ -1806,9 +1811,18 @@ public class TvProvider extends ContentProvider {
         }
     }
 
+    private boolean disallowModifyChannelType(ContentValues values, SqlParams params) {
+        if (values.containsKey(Channels.COLUMN_TYPE)) {
+            params.appendWhere(Channels.COLUMN_TYPE + "=?",
+                    values.getAsString(Channels.COLUMN_TYPE));
+            return true;
+        }
+        return false;
+    }
+
     private boolean disallowModifyChannelId(ContentValues values, SqlParams params) {
         if (values.containsKey(PreviewPrograms.COLUMN_CHANNEL_ID)) {
-            params.appendWhere(Programs.COLUMN_CHANNEL_ID + "=?",
+            params.appendWhere(PreviewPrograms.COLUMN_CHANNEL_ID + "=?",
                     values.getAsString(PreviewPrograms.COLUMN_CHANNEL_ID));
             return true;
         }
