@@ -132,6 +132,8 @@ public class TvProvider extends ContentProvider {
     private static final String CHANNELS_COLUMN_LOGO = "logo";
     private static final int MAX_LOGO_IMAGE_SIZE = 256;
 
+    private static final String EMPTY_STRING = "";
+
     private static final long MAX_PROGRAM_DATA_DELAY_IN_MILLIS = 10 * 1000; // 10 seconds
 
     private static final Map<String, String> sChannelProjectionMap;
@@ -1227,6 +1229,12 @@ public class TvProvider extends ContentProvider {
         mTransientRowHelper.ensureOldTransientRowsDeleted();
         switch (sUriMatcher.match(uri)) {
             case MATCH_CHANNEL:
+                // Preview channels are not necessarily associated with TV input service.
+                // Therefore, we fill a fake ID to meet not null restriction for preview channels.
+                if (!values.containsKey(Channels.COLUMN_INPUT_ID)
+                        && Channels.TYPE_PREVIEW.equals(values.get(Channels.COLUMN_TYPE))) {
+                    values.put(Channels.COLUMN_INPUT_ID, EMPTY_STRING);
+                }
                 filterContentValues(values, sChannelProjectionMap);
                 return insertChannel(uri, values);
             case MATCH_PROGRAM:
