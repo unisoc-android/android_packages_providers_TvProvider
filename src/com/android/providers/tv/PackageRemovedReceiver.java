@@ -58,6 +58,9 @@ public class PackageRemovedReceiver extends BroadcastReceiver {
             operations.add(ContentProviderOperation
                     .newDelete(TvContract.RecordedPrograms.CONTENT_URI)
                     .withSelection(selection, selectionArgs).build());
+            operations.add(ContentProviderOperation
+                    .newDelete(TvContract.WatchNextPrograms.CONTENT_URI)
+                    .withSelection(selection, selectionArgs).build());
 
             ContentProviderResult[] results = null;
             try {
