@@ -21,6 +21,7 @@ import android.content.SharedPreferences;
 import android.database.sqlite.SQLiteDatabase;
 import android.media.tv.TvContract.Channels;
 import android.media.tv.TvContract.PreviewPrograms;
+import android.media.tv.TvContract.WatchNextPrograms;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
 
@@ -79,6 +80,8 @@ public class TransientRowHelper {
         // Delete all the transient programs and channels.
         db.delete(TvProvider.PREVIEW_PROGRAMS_TABLE, PreviewPrograms.COLUMN_TRANSIENT + "=1", null);
         db.delete(TvProvider.CHANNELS_TABLE, Channels.COLUMN_TRANSIENT + "=1", null);
+        db.delete(TvProvider.WATCH_NEXT_PROGRAMS_TABLE, WatchNextPrograms.COLUMN_TRANSIENT + "=1",
+                null);
         setLastTransientRowsDeletedTime();
     }
 
