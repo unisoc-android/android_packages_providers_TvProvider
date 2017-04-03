@@ -15,8 +15,7 @@
  limitations under the License.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.android.providers.tv"
-    android:sharedUserId="android.uid.system">
+    package="com.android.providers.tv" >
 
     <!-- Allows an application to read (but not write) all the TV listings.
          This is the only (soon-to-be) public permission among other permissions defined here.
