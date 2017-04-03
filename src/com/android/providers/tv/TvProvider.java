@@ -415,8 +415,8 @@ public class TvProvider extends ContentProvider {
                 PreviewPrograms.COLUMN_LAST_PLAYBACK_POSITION_MILLIS);
         sPreviewProgramProjectionMap.put(PreviewPrograms.COLUMN_DURATION_MILLIS,
                 PreviewPrograms.COLUMN_DURATION_MILLIS);
-        sPreviewProgramProjectionMap.put(PreviewPrograms.COLUMN_APP_LINK_INTENT_URI,
-                PreviewPrograms.COLUMN_APP_LINK_INTENT_URI);
+        sPreviewProgramProjectionMap.put(PreviewPrograms.COLUMN_INTENT_URI,
+                PreviewPrograms.COLUMN_INTENT_URI);
         sPreviewProgramProjectionMap.put(PreviewPrograms.COLUMN_WEIGHT,
                 PreviewPrograms.COLUMN_WEIGHT);
         sPreviewProgramProjectionMap.put(PreviewPrograms.COLUMN_TRANSIENT,
@@ -508,8 +508,8 @@ public class TvProvider extends ContentProvider {
                 WatchNextPrograms.COLUMN_LAST_PLAYBACK_POSITION_MILLIS);
         sWatchNextProgramProjectionMap.put(WatchNextPrograms.COLUMN_DURATION_MILLIS,
                 WatchNextPrograms.COLUMN_DURATION_MILLIS);
-        sWatchNextProgramProjectionMap.put(WatchNextPrograms.COLUMN_APP_LINK_INTENT_URI,
-                WatchNextPrograms.COLUMN_APP_LINK_INTENT_URI);
+        sWatchNextProgramProjectionMap.put(WatchNextPrograms.COLUMN_INTENT_URI,
+                WatchNextPrograms.COLUMN_INTENT_URI);
         sWatchNextProgramProjectionMap.put(WatchNextPrograms.COLUMN_TRANSIENT,
                 WatchNextPrograms.COLUMN_TRANSIENT);
         sWatchNextProgramProjectionMap.put(WatchNextPrograms.COLUMN_TYPE,
@@ -631,7 +631,7 @@ public class TvProvider extends ContentProvider {
             + PreviewPrograms.COLUMN_PREVIEW_VIDEO_URI + " TEXT,"
             + PreviewPrograms.COLUMN_LAST_PLAYBACK_POSITION_MILLIS + " INTEGER,"
             + PreviewPrograms.COLUMN_DURATION_MILLIS + " INTEGER,"
-            + PreviewPrograms.COLUMN_APP_LINK_INTENT_URI + " TEXT,"
+            + PreviewPrograms.COLUMN_INTENT_URI + " TEXT,"
             + PreviewPrograms.COLUMN_WEIGHT + " INTEGER,"
             + PreviewPrograms.COLUMN_TRANSIENT + " INTEGER NOT NULL DEFAULT 0,"
             + PreviewPrograms.COLUMN_TYPE + " TEXT,"
@@ -692,7 +692,7 @@ public class TvProvider extends ContentProvider {
             + WatchNextPrograms.COLUMN_PREVIEW_VIDEO_URI + " TEXT,"
             + WatchNextPrograms.COLUMN_LAST_PLAYBACK_POSITION_MILLIS + " INTEGER,"
             + WatchNextPrograms.COLUMN_DURATION_MILLIS + " INTEGER,"
-            + WatchNextPrograms.COLUMN_APP_LINK_INTENT_URI + " TEXT,"
+            + WatchNextPrograms.COLUMN_INTENT_URI + " TEXT,"
             + WatchNextPrograms.COLUMN_TRANSIENT + " INTEGER NOT NULL DEFAULT 0,"
             + WatchNextPrograms.COLUMN_TYPE + " TEXT,"
             + WatchNextPrograms.COLUMN_WATCH_NEXT_TYPE + " TEXT,"
