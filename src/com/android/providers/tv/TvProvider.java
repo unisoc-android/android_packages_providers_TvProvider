@@ -54,6 +54,7 @@ import android.os.Message;
 import android.os.ParcelFileDescriptor;
 import android.os.ParcelFileDescriptor.AutoCloseInputStream;
 import android.preference.PreferenceManager;
+import android.provider.BaseColumns;
 import android.text.TextUtils;
 import android.text.format.DateUtils;
 import android.util.Log;
@@ -1531,6 +1532,7 @@ public class TvProvider extends ContentProvider {
     public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
         mTransientRowHelper.ensureOldTransientRowsDeleted();
         SqlParams params = createSqlParams(OP_UPDATE, uri, selection, selectionArgs);
+        blockIllegalAccessToIdAndPackageName(uri, values);
         boolean containImmutableColumn = false;
         if (params.getTables().equals(CHANNELS_TABLE)) {
             filterContentValues(values, sChannelProjectionMap);
@@ -1898,6 +1900,31 @@ public class TvProvider extends ContentProvider {
         return getContext().checkCallingOrSelfPermission(
                 android.Manifest.permission.MODIFY_PARENTAL_CONTROLS)
                 == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void blockIllegalAccessToIdAndPackageName(Uri uri, ContentValues values) {
+        if (values.containsKey(BaseColumns._ID)) {
+            int match = sUriMatcher.match(uri);
+            switch (match) {
+                case MATCH_CHANNEL_ID:
+                case MATCH_PROGRAM_ID:
+                case MATCH_PREVIEW_PROGRAM_ID:
+                case MATCH_RECORDED_PROGRAM_ID:
+                case MATCH_WATCH_NEXT_PROGRAM_ID:
+                case MATCH_WATCHED_PROGRAM_ID:
+                    if (TextUtils.equals(values.getAsString(BaseColumns._ID),
+                            uri.getLastPathSegment())) {
+                        break;
+                    }
+                default:
+                    throw new IllegalArgumentException("Not allowed to change ID.");
+            }
+        }
+        if (values.containsKey(BaseTvColumns.COLUMN_PACKAGE_NAME)
+                && !callerHasAccessAllEpgDataPermission() && !TextUtils.equals(values.getAsString(
+                        BaseTvColumns.COLUMN_PACKAGE_NAME), getCallingPackage_())) {
+            throw new SecurityException("Not allowed to change package name.");
+        }
     }
 
     private void blockIllegalAccessToChannelsSystemColumns(ContentValues values) {
