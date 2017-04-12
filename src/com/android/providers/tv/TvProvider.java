@@ -270,6 +270,10 @@ public class TvProvider extends ContentProvider {
         sProgramProjectionMap.put(Programs.COLUMN_INTERNAL_PROVIDER_FLAG4,
                 Programs.COLUMN_INTERNAL_PROVIDER_FLAG4);
         sProgramProjectionMap.put(Programs.COLUMN_VERSION_NUMBER, Programs.COLUMN_VERSION_NUMBER);
+        sProgramProjectionMap.put(Programs.COLUMN_REVIEW_RATING_STYLE,
+                Programs.COLUMN_REVIEW_RATING_STYLE);
+        sProgramProjectionMap.put(Programs.COLUMN_REVIEW_RATING,
+                Programs.COLUMN_REVIEW_RATING);
 
         sWatchedProgramProjectionMap = new HashMap<>();
         sWatchedProgramProjectionMap.put(WatchedPrograms._ID, WatchedPrograms._ID);
@@ -358,6 +362,10 @@ public class TvProvider extends ContentProvider {
                 RecordedPrograms.COLUMN_INTERNAL_PROVIDER_FLAG4);
         sRecordedProgramProjectionMap.put(RecordedPrograms.COLUMN_VERSION_NUMBER,
                 RecordedPrograms.COLUMN_VERSION_NUMBER);
+        sRecordedProgramProjectionMap.put(RecordedPrograms.COLUMN_REVIEW_RATING_STYLE,
+                RecordedPrograms.COLUMN_REVIEW_RATING_STYLE);
+        sRecordedProgramProjectionMap.put(RecordedPrograms.COLUMN_REVIEW_RATING,
+                RecordedPrograms.COLUMN_REVIEW_RATING);
 
         sPreviewProgramProjectionMap = new HashMap<>();
         sPreviewProgramProjectionMap.put(PreviewPrograms._ID, PreviewPrograms._ID);
@@ -597,6 +605,8 @@ public class TvProvider extends ContentProvider {
             + RecordedPrograms.COLUMN_INTERNAL_PROVIDER_FLAG3 + " INTEGER,"
             + RecordedPrograms.COLUMN_INTERNAL_PROVIDER_FLAG4 + " INTEGER,"
             + RecordedPrograms.COLUMN_VERSION_NUMBER + " INTEGER,"
+            + RecordedPrograms.COLUMN_REVIEW_RATING_STYLE + " INTEGER,"
+            + RecordedPrograms.COLUMN_REVIEW_RATING + " TEXT,"
             + "FOREIGN KEY(" + RecordedPrograms.COLUMN_CHANNEL_ID + ") "
                     + "REFERENCES " + CHANNELS_TABLE + "(" + Channels._ID + ") "
                     + "ON UPDATE CASCADE ON DELETE SET NULL);";
@@ -807,6 +817,8 @@ public class TvProvider extends ContentProvider {
                     + Programs.COLUMN_INTERNAL_PROVIDER_FLAG2 + " INTEGER,"
                     + Programs.COLUMN_INTERNAL_PROVIDER_FLAG3 + " INTEGER,"
                     + Programs.COLUMN_INTERNAL_PROVIDER_FLAG4 + " INTEGER,"
+                    + Programs.COLUMN_REVIEW_RATING_STYLE + " INTEGER,"
+                    + Programs.COLUMN_REVIEW_RATING + " TEXT,"
                     + Programs.COLUMN_VERSION_NUMBER + " INTEGER,"
                     + "FOREIGN KEY("
                             + Programs.COLUMN_CHANNEL_ID + "," + Programs.COLUMN_PACKAGE_NAME
@@ -932,6 +944,14 @@ public class TvProvider extends ContentProvider {
                         + Channels.COLUMN_SYSTEM_APPROVED + " INTEGER NOT NULL DEFAULT 0;");
                 db.execSQL("ALTER TABLE " + CHANNELS_TABLE + " ADD "
                         + Channels.COLUMN_INTERNAL_PROVIDER_ID + " TEXT;");
+                db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
+                        + Programs.COLUMN_REVIEW_RATING_STYLE + " INTEGER;");
+                db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
+                        + Programs.COLUMN_REVIEW_RATING + " TEXT;");
+                db.execSQL("ALTER TABLE " + RECORDED_PROGRAMS_TABLE + " ADD "
+                        + RecordedPrograms.COLUMN_REVIEW_RATING_STYLE + " INTEGER;");
+                db.execSQL("ALTER TABLE " + RECORDED_PROGRAMS_TABLE + " ADD "
+                        + RecordedPrograms.COLUMN_REVIEW_RATING + " TEXT;");
                 db.execSQL(CREATE_PREVIEW_PROGRAMS_TABLE_SQL);
                 db.execSQL(CREATE_PREVIEW_PROGRAMS_PACKAGE_NAME_INDEX_SQL);
                 db.execSQL(CREATE_PREVIEW_PROGRAMS_CHANNEL_ID_INDEX_SQL);
