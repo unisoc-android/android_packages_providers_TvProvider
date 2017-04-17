@@ -646,7 +646,7 @@ public class TvProvider extends ContentProvider {
             + PreviewPrograms.COLUMN_INTENT_URI + " TEXT,"
             + PreviewPrograms.COLUMN_WEIGHT + " INTEGER,"
             + PreviewPrograms.COLUMN_TRANSIENT + " INTEGER NOT NULL DEFAULT 0,"
-            + PreviewPrograms.COLUMN_TYPE + " INTEGER,"
+            + PreviewPrograms.COLUMN_TYPE + " INTEGER NOT NULL,"
             + PreviewPrograms.COLUMN_POSTER_ART_ASPECT_RATIO + " INTEGER,"
             + PreviewPrograms.COLUMN_THUMBNAIL_ASPECT_RATIO + " INTEGER,"
             + PreviewPrograms.COLUMN_LOGO_URI + " TEXT,"
@@ -706,7 +706,7 @@ public class TvProvider extends ContentProvider {
             + WatchNextPrograms.COLUMN_DURATION_MILLIS + " INTEGER,"
             + WatchNextPrograms.COLUMN_INTENT_URI + " TEXT,"
             + WatchNextPrograms.COLUMN_TRANSIENT + " INTEGER NOT NULL DEFAULT 0,"
-            + WatchNextPrograms.COLUMN_TYPE + " INTEGER,"
+            + WatchNextPrograms.COLUMN_TYPE + " INTEGER NOT NULL,"
             + WatchNextPrograms.COLUMN_WATCH_NEXT_TYPE + " INTEGER,"
             + WatchNextPrograms.COLUMN_POSTER_ART_ASPECT_RATIO + " INTEGER,"
             + WatchNextPrograms.COLUMN_THUMBNAIL_ASPECT_RATIO + " INTEGER,"
@@ -1439,6 +1439,10 @@ public class TvProvider extends ContentProvider {
     }
 
     private Uri insertPreviewProgram(Uri uri, ContentValues values) {
+        if (!values.containsKey(PreviewPrograms.COLUMN_TYPE)) {
+            throw new IllegalArgumentException("Missing the required column: " +
+                    PreviewPrograms.COLUMN_TYPE);
+        }
         blockIllegalAccessFromBlockedPackage();
         // Mark the owner package of this program.
         values.put(Programs.COLUMN_PACKAGE_NAME, getCallingPackage_());
@@ -1456,6 +1460,10 @@ public class TvProvider extends ContentProvider {
     }
 
     private Uri insertWatchNextProgram(Uri uri, ContentValues values) {
+        if (!values.containsKey(WatchNextPrograms.COLUMN_TYPE)) {
+            throw new IllegalArgumentException("Missing the required column: " +
+                    WatchNextPrograms.COLUMN_TYPE);
+        }
         blockIllegalAccessFromBlockedPackage();
         if (!callerHasAccessAllEpgDataPermission() ||
                 !values.containsKey(Programs.COLUMN_PACKAGE_NAME)) {
