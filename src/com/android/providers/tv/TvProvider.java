@@ -1526,12 +1526,12 @@ public class TvProvider extends ContentProvider {
     public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
         mTransientRowHelper.ensureOldTransientRowsDeleted();
         SqlParams params = createSqlParams(OP_UPDATE, uri, selection, selectionArgs);
-        boolean containUnmodifiableColumn = false;
+        boolean containImmutableColumn = false;
         if (params.getTables().equals(CHANNELS_TABLE)) {
             filterContentValues(values, sChannelProjectionMap);
-            containUnmodifiableColumn = disallowModifyChannelType(values, params);
-            if (containUnmodifiableColumn && Channels.CONTENT_URI.equals(uri)) {
-                Log.i(TAG, "Updating failed. Attempt to change unmodifiable column for channels.");
+            containImmutableColumn = disallowModifyChannelType(values, params);
+            if (containImmutableColumn && sUriMatcher.match(uri) != MATCH_CHANNEL_ID) {
+                Log.i(TAG, "Updating failed. Attempt to change immutable column for channels.");
                 return 0;
             }
             blockIllegalAccessToChannelsSystemColumns(values);
@@ -1544,8 +1544,8 @@ public class TvProvider extends ContentProvider {
             checkAndConvertGenre(values);
         } else if (params.getTables().equals(PREVIEW_PROGRAMS_TABLE)) {
             filterContentValues(values, sPreviewProgramProjectionMap);
-            containUnmodifiableColumn = disallowModifyChannelId(values, params);
-            if (containUnmodifiableColumn && PreviewPrograms.CONTENT_URI.equals(uri)) {
+            containImmutableColumn = disallowModifyChannelId(values, params);
+            if (containImmutableColumn && PreviewPrograms.CONTENT_URI.equals(uri)) {
                 Log.i(TAG, "Updating failed. Attempt to change unmodifiable column for "
                         + "preview programs.");
                 return 0;
@@ -1564,9 +1564,9 @@ public class TvProvider extends ContentProvider {
                 params.getSelectionArgs());
         if (count > 0) {
             notifyChange(uri);
-        } else if (containUnmodifiableColumn) {
+        } else if (containImmutableColumn) {
             Log.i(TAG, "Updating failed. The item may not exist or attempt to change "
-                    + "unmodifiable column.");
+                    + "immutable column.");
         }
         return count;
     }
@@ -1647,6 +1647,12 @@ public class TvProvider extends ContentProvider {
                         TvContract.PARAM_BROWSABLE_ONLY, false);
                 if (browsableOnly) {
                     params.appendWhere(Channels.COLUMN_BROWSABLE + "=1");
+                }
+                String preview = uri.getQueryParameter(TvContract.PARAM_PREVIEW);
+                if (preview != null) {
+                    String previewSelection = Channels.COLUMN_TYPE
+                            + (preview.equals(String.valueOf(true)) ? "=?" : "!=?");
+                    params.appendWhere(previewSelection, Channels.TYPE_PREVIEW);
                 }
                 break;
             case MATCH_CHANNEL_ID:
