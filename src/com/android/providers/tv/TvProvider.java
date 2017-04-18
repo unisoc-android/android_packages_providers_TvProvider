@@ -83,7 +83,7 @@ public class TvProvider extends ContentProvider {
     private static final boolean DEBUG = false;
     private static final String TAG = "TvProvider";
 
-    static final int DATABASE_VERSION = 33;
+    static final int DATABASE_VERSION = 34;
     static final String SHARED_PREF_BLOCKED_PACKAGES_KEY = "blocked_packages";
     static final String CHANNELS_TABLE = "channels";
     static final String PREVIEW_PROGRAMS_TABLE = "preview_programs";
@@ -953,12 +953,17 @@ public class TvProvider extends ContentProvider {
                         + RecordedPrograms.COLUMN_REVIEW_RATING_STYLE + " INTEGER;");
                 db.execSQL("ALTER TABLE " + RECORDED_PROGRAMS_TABLE + " ADD "
                         + RecordedPrograms.COLUMN_REVIEW_RATING + " TEXT;");
+                oldVersion = 33;
+            }
+            if (oldVersion == 33) {
+                db.execSQL("DROP TABLE IF EXISTS " + PREVIEW_PROGRAMS_TABLE);
+                db.execSQL("DROP TABLE IF EXISTS " + WATCH_NEXT_PROGRAMS_TABLE);
                 db.execSQL(CREATE_PREVIEW_PROGRAMS_TABLE_SQL);
                 db.execSQL(CREATE_PREVIEW_PROGRAMS_PACKAGE_NAME_INDEX_SQL);
                 db.execSQL(CREATE_PREVIEW_PROGRAMS_CHANNEL_ID_INDEX_SQL);
                 db.execSQL(CREATE_WATCH_NEXT_PROGRAMS_TABLE_SQL);
                 db.execSQL(CREATE_WATCH_NEXT_PROGRAMS_PACKAGE_NAME_INDEX_SQL);
-                oldVersion = 33;
+                oldVersion = 34;
             }
             Log.i(TAG, "Upgrading from version " + oldVersion + " to " + newVersion + " is done.");
         }
