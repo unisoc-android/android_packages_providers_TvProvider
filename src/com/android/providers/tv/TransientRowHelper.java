@@ -22,8 +22,8 @@ import android.database.sqlite.SQLiteDatabase;
 import android.media.tv.TvContract.Channels;
 import android.media.tv.TvContract.PreviewPrograms;
 import android.media.tv.TvContract.WatchNextPrograms;
-import android.os.SystemClock;
 import android.preference.PreferenceManager;
+import android.provider.Settings;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.providers.tv.TvProvider.DatabaseHelper;
@@ -33,8 +33,8 @@ import com.android.providers.tv.TvProvider.DatabaseHelper;
  * once after boot.
  */
 public class TransientRowHelper {
-    private static final String PREF_KEY_LAST_TRANSIENT_ROWS_DELETED_TIME =
-            "pref_key_last_transient_rows_deleted_time";
+    private static final String PREF_KEY_LAST_DELETION_BOOT_COUNT =
+            "pref_key_last_deletion_boot_count";
     private static TransientRowHelper sInstance;
 
     private Context mContext;
@@ -70,7 +70,7 @@ public class TransientRowHelper {
             return;
         }
         mTransientRowsDeleted = true;
-        if (getLastTransientRowsDeletedTime() > getBootCompletedTimeMillis()) {
+        if (getLastDeletionBootCount() >= getBootCount()) {
             // This can be the second execution of TvProvider after boot since system kills
             // TvProvider in low memory conditions. If this is the case, we shouldn't delete
             // transient rows.
@@ -82,25 +82,26 @@ public class TransientRowHelper {
         db.delete(TvProvider.CHANNELS_TABLE, Channels.COLUMN_TRANSIENT + "=1", null);
         db.delete(TvProvider.WATCH_NEXT_PROGRAMS_TABLE, WatchNextPrograms.COLUMN_TRANSIENT + "=1",
                 null);
-        setLastTransientRowsDeletedTime();
+        setLastDeletionBootCount();
     }
 
     @VisibleForTesting
-    protected long getLastTransientRowsDeletedTime() {
+    protected int getBootCount() {
+        return Settings.Global.getInt(mContext.getContentResolver(), Settings.Global.BOOT_COUNT,
+                -1);
+    }
+
+    @VisibleForTesting
+    protected int getLastDeletionBootCount() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
-        return prefs.getLong(PREF_KEY_LAST_TRANSIENT_ROWS_DELETED_TIME, 0);
+        return prefs.getInt(PREF_KEY_LAST_DELETION_BOOT_COUNT, -1);
     }
 
     @VisibleForTesting
-    protected void setLastTransientRowsDeletedTime() {
+    protected void setLastDeletionBootCount() {
         SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(mContext)
                 .edit();
-        editor.putLong(PREF_KEY_LAST_TRANSIENT_ROWS_DELETED_TIME, System.currentTimeMillis());
+        editor.putInt(PREF_KEY_LAST_DELETION_BOOT_COUNT, getBootCount());
         editor.apply();
-    }
-
-    @VisibleForTesting
-    protected long getBootCompletedTimeMillis() {
-        return System.currentTimeMillis() - SystemClock.elapsedRealtime();
     }
 }
