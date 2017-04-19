@@ -29,7 +29,6 @@ import android.media.tv.TvContract.Channels;
 import android.media.tv.TvContract.PreviewPrograms;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.provider.Settings;
 import android.test.AndroidTestCase;
 import android.test.mock.MockContentProvider;
@@ -133,6 +132,7 @@ public class TransientRowHelperTests extends AndroidTestCase {
         ContentValues values = new ContentValues();
         values.put(PreviewPrograms.COLUMN_CHANNEL_ID, channelId);
         for (PreviewProgram program : programs) {
+            values.put(PreviewPrograms.COLUMN_TYPE, PreviewPrograms.TYPE_MOVIE);
             values.put(PreviewPrograms.COLUMN_TRANSIENT, program.isTransient ? 1 : 0);
             Uri uri = mResolver.insert(PreviewPrograms.CONTENT_URI, values);
             assertNotNull(uri);
@@ -205,34 +205,31 @@ public class TransientRowHelperTests extends AndroidTestCase {
     }
 
     private class RebootSimulatingTransientRowHelper extends TransientRowHelper {
-        private long mLastTransientRowsRemoveTime;
-        private Long mBootTime;
+        private int mLastDeletionBootCount;
+        private int mBootCount = 1;
 
         private RebootSimulatingTransientRowHelper(Context context) {
             super(context);
         }
 
         @Override
-        protected long getLastTransientRowsDeletedTime() {
-            return mLastTransientRowsRemoveTime;
+        protected int getBootCount() {
+            return mBootCount;
         }
 
         @Override
-        protected void setLastTransientRowsDeletedTime() {
-            mLastTransientRowsRemoveTime = System.currentTimeMillis();
+        protected int getLastDeletionBootCount() {
+            return mLastDeletionBootCount;
         }
 
         @Override
-        protected long getBootCompletedTimeMillis() {
-            if (mBootTime != null) {
-                return mBootTime;
-            }
-            return System.currentTimeMillis() - SystemClock.elapsedRealtime();
+        protected void setLastDeletionBootCount() {
+            mLastDeletionBootCount = mBootCount;
         }
 
         private void simulateReboot() {
             mTransientRowsDeleted = false;
-            mBootTime = System.currentTimeMillis();
+            mBootCount++;
         }
     }
 }
