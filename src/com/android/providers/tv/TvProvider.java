@@ -1324,7 +1324,7 @@ public class TvProvider extends ContentProvider {
             case MATCH_CHANNEL:
                 // Preview channels are not necessarily associated with TV input service.
                 // Therefore, we fill a fake ID to meet not null restriction for preview channels.
-                if (!values.containsKey(Channels.COLUMN_INPUT_ID)
+                if (values.get(Channels.COLUMN_INPUT_ID) == null
                         && Channels.TYPE_PREVIEW.equals(values.get(Channels.COLUMN_TYPE))) {
                     values.put(Channels.COLUMN_INPUT_ID, EMPTY_STRING);
                 }
