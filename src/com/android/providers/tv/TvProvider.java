@@ -87,22 +87,23 @@ public class TvProvider extends ContentProvider {
     static final int DATABASE_VERSION = 34;
     static final String SHARED_PREF_BLOCKED_PACKAGES_KEY = "blocked_packages";
     static final String CHANNELS_TABLE = "channels";
+    static final String PROGRAMS_TABLE = "programs";
+    static final String RECORDED_PROGRAMS_TABLE = "recorded_programs";
     static final String PREVIEW_PROGRAMS_TABLE = "preview_programs";
     static final String WATCH_NEXT_PROGRAMS_TABLE = "watch_next_programs";
     static final String WATCHED_PROGRAMS_TABLE = "watched_programs";
+    static final String PROGRAMS_TABLE_PACKAGE_NAME_INDEX = "programs_package_name_index";
+    static final String PROGRAMS_TABLE_CHANNEL_ID_INDEX = "programs_channel_id_index";
+    static final String PROGRAMS_TABLE_START_TIME_INDEX = "programs_start_time_index";
+    static final String PROGRAMS_TABLE_END_TIME_INDEX = "programs_end_time_index";
+    static final String WATCHED_PROGRAMS_TABLE_CHANNEL_ID_INDEX =
+            "watched_programs_channel_id_index";
     // The internal column in the watched programs table to indicate whether the current log entry
     // is consolidated or not. Unconsolidated entries may have columns with missing data.
     static final String WATCHED_PROGRAMS_COLUMN_CONSOLIDATED = "consolidated";
+    static final String CHANNELS_COLUMN_LOGO = "logo";
     private static final String DATABASE_NAME = "tv.db";
-    private static final String PROGRAMS_TABLE = "programs";
-    private static final String RECORDED_PROGRAMS_TABLE = "recorded_programs";
     private static final String DELETED_CHANNELS_TABLE = "deleted_channels";  // Deprecated
-    private static final String PROGRAMS_TABLE_PACKAGE_NAME_INDEX = "programs_package_name_index";
-    private static final String PROGRAMS_TABLE_CHANNEL_ID_INDEX = "programs_channel_id_index";
-    private static final String PROGRAMS_TABLE_START_TIME_INDEX = "programs_start_time_index";
-    private static final String PROGRAMS_TABLE_END_TIME_INDEX = "programs_end_time_index";
-    private static final String WATCHED_PROGRAMS_TABLE_CHANNEL_ID_INDEX =
-            "watched_programs_channel_id_index";
     private static final String DEFAULT_PROGRAMS_SORT_ORDER = Programs.COLUMN_START_TIME_UTC_MILLIS
             + " ASC";
     private static final String DEFAULT_WATCHED_PROGRAMS_SORT_ORDER =
@@ -134,7 +135,6 @@ public class TvProvider extends ContentProvider {
     private static final int MATCH_WATCH_NEXT_PROGRAM = 13;
     private static final int MATCH_WATCH_NEXT_PROGRAM_ID = 14;
 
-    private static final String CHANNELS_COLUMN_LOGO = "logo";
     private static final int MAX_LOGO_IMAGE_SIZE = 256;
 
     private static final String EMPTY_STRING = "";
@@ -743,7 +743,12 @@ public class TvProvider extends ContentProvider {
         }
 
         private DatabaseHelper(Context context) {
-            super(context, DATABASE_NAME, null, DATABASE_VERSION);
+            this(context, DATABASE_NAME, DATABASE_VERSION);
+        }
+
+        @VisibleForTesting
+        DatabaseHelper(Context context, String databaseName, int databaseVersion) {
+            super(context, databaseName, null, databaseVersion);
             mContext = context;
         }
 
@@ -885,7 +890,7 @@ public class TvProvider extends ContentProvider {
             }
 
             Log.i(TAG, "Upgrading from version " + oldVersion + " to " + newVersion + ".");
-            if (oldVersion == 23) {
+            if (oldVersion <= 23) {
                 db.execSQL("ALTER TABLE " + CHANNELS_TABLE + " ADD "
                         + Channels.COLUMN_INTERNAL_PROVIDER_FLAG1 + " INTEGER;");
                 db.execSQL("ALTER TABLE " + CHANNELS_TABLE + " ADD "
@@ -894,9 +899,8 @@ public class TvProvider extends ContentProvider {
                         + Channels.COLUMN_INTERNAL_PROVIDER_FLAG3 + " INTEGER;");
                 db.execSQL("ALTER TABLE " + CHANNELS_TABLE + " ADD "
                         + Channels.COLUMN_INTERNAL_PROVIDER_FLAG4 + " INTEGER;");
-                oldVersion++;
             }
-            if (oldVersion == 24) {
+            if (oldVersion <= 24) {
                 db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
                         + Programs.COLUMN_INTERNAL_PROVIDER_FLAG1 + " INTEGER;");
                 db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
@@ -905,9 +909,8 @@ public class TvProvider extends ContentProvider {
                         + Programs.COLUMN_INTERNAL_PROVIDER_FLAG3 + " INTEGER;");
                 db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
                         + Programs.COLUMN_INTERNAL_PROVIDER_FLAG4 + " INTEGER;");
-                oldVersion++;
             }
-            if (oldVersion == 25) {
+            if (oldVersion <= 25) {
                 db.execSQL("ALTER TABLE " + CHANNELS_TABLE + " ADD "
                         + Channels.COLUMN_APP_LINK_ICON_URI + " TEXT;");
                 db.execSQL("ALTER TABLE " + CHANNELS_TABLE + " ADD "
@@ -920,7 +923,6 @@ public class TvProvider extends ContentProvider {
                         + Channels.COLUMN_APP_LINK_INTENT_URI + " TEXT;");
                 db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
                         + Programs.COLUMN_SEARCHABLE + " INTEGER NOT NULL DEFAULT 1;");
-                oldVersion++;
             }
             if (oldVersion <= 28) {
                 db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
@@ -929,17 +931,14 @@ public class TvProvider extends ContentProvider {
                         Programs.COLUMN_SEASON_DISPLAY_NUMBER);
                 migrateIntegerColumnToTextColumn(db, PROGRAMS_TABLE, Programs.COLUMN_EPISODE_NUMBER,
                         Programs.COLUMN_EPISODE_DISPLAY_NUMBER);
-                oldVersion = 29;
             }
-            if (oldVersion == 29) {
+            if (oldVersion <= 29) {
                 db.execSQL("DROP TABLE IF EXISTS " + RECORDED_PROGRAMS_TABLE);
                 db.execSQL(CREATE_RECORDED_PROGRAMS_TABLE_SQL);
-                oldVersion = 30;
             }
-            if (oldVersion == 30) {
+            if (oldVersion <= 30) {
                 db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
                         + Programs.COLUMN_RECORDING_PROHIBITED + " INTEGER NOT NULL DEFAULT 0;");
-                oldVersion = 31;
             }
             if (oldVersion <= 32) {
                 db.execSQL("ALTER TABLE " + CHANNELS_TABLE + " ADD "
@@ -950,13 +949,14 @@ public class TvProvider extends ContentProvider {
                         + Programs.COLUMN_REVIEW_RATING_STYLE + " INTEGER;");
                 db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
                         + Programs.COLUMN_REVIEW_RATING + " TEXT;");
-                db.execSQL("ALTER TABLE " + RECORDED_PROGRAMS_TABLE + " ADD "
-                        + RecordedPrograms.COLUMN_REVIEW_RATING_STYLE + " INTEGER;");
-                db.execSQL("ALTER TABLE " + RECORDED_PROGRAMS_TABLE + " ADD "
-                        + RecordedPrograms.COLUMN_REVIEW_RATING + " TEXT;");
-                oldVersion = 33;
+                if (oldVersion > 29) {
+                    db.execSQL("ALTER TABLE " + RECORDED_PROGRAMS_TABLE + " ADD "
+                            + RecordedPrograms.COLUMN_REVIEW_RATING_STYLE + " INTEGER;");
+                    db.execSQL("ALTER TABLE " + RECORDED_PROGRAMS_TABLE + " ADD "
+                            + RecordedPrograms.COLUMN_REVIEW_RATING + " TEXT;");
+                }
             }
-            if (oldVersion == 33) {
+            if (oldVersion <= 33) {
                 db.execSQL("DROP TABLE IF EXISTS " + PREVIEW_PROGRAMS_TABLE);
                 db.execSQL("DROP TABLE IF EXISTS " + WATCH_NEXT_PROGRAMS_TABLE);
                 db.execSQL(CREATE_PREVIEW_PROGRAMS_TABLE_SQL);
@@ -964,7 +964,6 @@ public class TvProvider extends ContentProvider {
                 db.execSQL(CREATE_PREVIEW_PROGRAMS_CHANNEL_ID_INDEX_SQL);
                 db.execSQL(CREATE_WATCH_NEXT_PROGRAMS_TABLE_SQL);
                 db.execSQL(CREATE_WATCH_NEXT_PROGRAMS_PACKAGE_NAME_INDEX_SQL);
-                oldVersion = 34;
             }
             Log.i(TAG, "Upgrading from version " + oldVersion + " to " + newVersion + " is done.");
         }
@@ -985,9 +984,10 @@ public class TvProvider extends ContentProvider {
             if (!sProjectionMapsUpdated) {
                 updateProjectionMap(db, CHANNELS_TABLE, sChannelProjectionMap);
                 updateProjectionMap(db, PROGRAMS_TABLE, sProgramProjectionMap);
+                updateProjectionMap(db, WATCHED_PROGRAMS_TABLE, sWatchedProgramProjectionMap);
+                updateProjectionMap(db, RECORDED_PROGRAMS_TABLE, sRecordedProgramProjectionMap);
                 updateProjectionMap(db, PREVIEW_PROGRAMS_TABLE, sPreviewProgramProjectionMap);
                 updateProjectionMap(db, WATCH_NEXT_PROGRAMS_TABLE, sWatchNextProgramProjectionMap);
-                updateProjectionMap(db, RECORDED_PROGRAMS_TABLE, sRecordedProgramProjectionMap);
                 sProjectionMapsUpdated = true;
             }
         }
@@ -1024,7 +1024,9 @@ public class TvProvider extends ContentProvider {
         if (DEBUG) {
             Log.d(TAG, "Creating TvProvider");
         }
-        mOpenHelper = DatabaseHelper.getInstance(getContext());
+        if (mOpenHelper == null) {
+            mOpenHelper = DatabaseHelper.getInstance(getContext());
+        }
         mTransientRowHelper = TransientRowHelper.getInstance(getContext());
         scheduleEpgDataCleanup();
         buildGenreMap();
@@ -1079,6 +1081,11 @@ public class TvProvider extends ContentProvider {
     @VisibleForTesting
     String getCallingPackage_() {
         return getCallingPackage();
+    }
+
+    @VisibleForTesting
+    void setOpenHelper(DatabaseHelper helper) {
+        mOpenHelper = helper;
     }
 
     @Override
