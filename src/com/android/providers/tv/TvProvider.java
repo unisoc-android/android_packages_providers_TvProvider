@@ -1609,6 +1609,7 @@ public class TvProvider extends ContentProvider {
 
         // Control access to EPG data (excluding watched programs) when the caller doesn't have all
         // access.
+        String prefix = match == MATCH_CHANNEL ? CHANNELS_TABLE + "." : "";
         if (!callerHasAccessAllEpgDataPermission()
                 && match != MATCH_WATCHED_PROGRAM && match != MATCH_WATCHED_PROGRAM_ID) {
             if (!TextUtils.isEmpty(selection)) {
@@ -1616,7 +1617,6 @@ public class TvProvider extends ContentProvider {
             }
             // Limit the operation only to the data that the calling package owns except for when
             // the caller tries to read TV listings and has the appropriate permission.
-            String prefix = match == MATCH_CHANNEL ? CHANNELS_TABLE + "." : "";
             if (operation.equals(OP_QUERY) && callerHasReadTvListingsPermission()) {
                 params.setWhere(prefix + BaseTvColumns.COLUMN_PACKAGE_NAME + "=? OR "
                         + Channels.COLUMN_SEARCHABLE + "=?", getCallingPackage_(), "1");
@@ -1624,6 +1624,10 @@ public class TvProvider extends ContentProvider {
                 params.setWhere(prefix + BaseTvColumns.COLUMN_PACKAGE_NAME + "=?",
                         getCallingPackage_());
             }
+        }
+        String packageName = uri.getQueryParameter(TvContract.PARAM_PACKAGE);
+        if (packageName != null) {
+            params.appendWhere(prefix + BaseTvColumns.COLUMN_PACKAGE_NAME + "=?", packageName);
         }
 
         switch (match) {
