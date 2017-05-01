@@ -29,6 +29,9 @@ import android.test.RenamingDelegatingContext;
 import android.test.mock.MockContext;
 import android.test.mock.MockPackageManager;
 
+import java.util.Set;
+import java.util.HashSet;
+
 class MockTvProviderContext extends IsolatedContext {
     private final Context mBase;
     private final MockPackageManager mMockPackageManager = new MockPackageManager() {
@@ -37,6 +40,8 @@ class MockTvProviderContext extends IsolatedContext {
             return null;
         }
     };
+
+    private final Set<String> rejectedPermissions = new HashSet<>();
 
     MockTvProviderContext(ContentResolver resolver, Context base) {
         super(resolver, new RenamingDelegatingContext(new MockContext(), base, "test."));
@@ -65,11 +70,20 @@ class MockTvProviderContext extends IsolatedContext {
 
     @Override
     public int checkCallingOrSelfPermission(String permission) {
-        return PackageManager.PERMISSION_GRANTED;
+        return rejectedPermissions.contains(permission) ? PackageManager.PERMISSION_DENIED
+                : PackageManager.PERMISSION_GRANTED;
     }
 
     @Override
     public SharedPreferences getSharedPreferences(String name, int mode) {
         return mBase.getSharedPreferences(name, mode);
+    }
+
+    public void grantOrRejectPermission(String permission, boolean granted) {
+        if (granted) {
+            rejectedPermissions.remove(permission);
+        } else {
+            rejectedPermissions.add(permission);
+        }
     }
 }
