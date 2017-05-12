@@ -147,7 +147,7 @@ public class TvProvider extends ContentProvider {
     private static final Map<String, String> sRecordedProgramProjectionMap;
     private static final Map<String, String> sPreviewProgramProjectionMap;
     private static final Map<String, String> sWatchNextProgramProjectionMap;
-    private static boolean sProjectionMapsUpdated;
+    private static boolean sInitialized;
 
     static {
         sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
@@ -970,26 +970,27 @@ public class TvProvider extends ContentProvider {
 
         @Override
         public void onOpen(SQLiteDatabase db) {
-            buildProjectionMap(db);
-            sBlockedPackagesSharedPreference = PreferenceManager.getDefaultSharedPreferences(
-                    mContext);
-            sBlockedPackages = new ConcurrentHashMap<>();
-            for (String packageName : sBlockedPackagesSharedPreference.getStringSet(
-                    SHARED_PREF_BLOCKED_PACKAGES_KEY, new HashSet<>())) {
-                sBlockedPackages.put(packageName, true);
+            // This method is thread-safe. It's guaranteed by the implementation of SQLiteOpenHelper
+            if (!sInitialized) {
+                buildProjectionMap(db);
+                sBlockedPackagesSharedPreference = PreferenceManager.getDefaultSharedPreferences(
+                        mContext);
+                sBlockedPackages = new ConcurrentHashMap<>();
+                for (String packageName : sBlockedPackagesSharedPreference.getStringSet(
+                        SHARED_PREF_BLOCKED_PACKAGES_KEY, new HashSet<>())) {
+                    sBlockedPackages.put(packageName, true);
+                }
+                sInitialized = true;
             }
         }
 
         private void buildProjectionMap(SQLiteDatabase db) {
-            if (!sProjectionMapsUpdated) {
-                updateProjectionMap(db, CHANNELS_TABLE, sChannelProjectionMap);
-                updateProjectionMap(db, PROGRAMS_TABLE, sProgramProjectionMap);
-                updateProjectionMap(db, WATCHED_PROGRAMS_TABLE, sWatchedProgramProjectionMap);
-                updateProjectionMap(db, RECORDED_PROGRAMS_TABLE, sRecordedProgramProjectionMap);
-                updateProjectionMap(db, PREVIEW_PROGRAMS_TABLE, sPreviewProgramProjectionMap);
-                updateProjectionMap(db, WATCH_NEXT_PROGRAMS_TABLE, sWatchNextProgramProjectionMap);
-                sProjectionMapsUpdated = true;
-            }
+            updateProjectionMap(db, CHANNELS_TABLE, sChannelProjectionMap);
+            updateProjectionMap(db, PROGRAMS_TABLE, sProgramProjectionMap);
+            updateProjectionMap(db, WATCHED_PROGRAMS_TABLE, sWatchedProgramProjectionMap);
+            updateProjectionMap(db, RECORDED_PROGRAMS_TABLE, sRecordedProgramProjectionMap);
+            updateProjectionMap(db, PREVIEW_PROGRAMS_TABLE, sPreviewProgramProjectionMap);
+            updateProjectionMap(db, WATCH_NEXT_PROGRAMS_TABLE, sWatchNextProgramProjectionMap);
         }
 
         private void updateProjectionMap(SQLiteDatabase db, String tableName,
@@ -1129,11 +1130,7 @@ public class TvProvider extends ContentProvider {
         if (!callerHasAccessAllEpgDataPermission()) {
             return null;
         }
-        if (!sProjectionMapsUpdated) {
-            // Database is not accessed before and the projection maps are not updated yet.
-            // Gets database here to make it initialized.
-            mOpenHelper.getReadableDatabase().close();
-        }
+        ensureInitialized();
         Map<String, String> projectionMap;
         switch (method) {
             case TvContract.METHOD_GET_COLUMNS:
@@ -1273,6 +1270,7 @@ public class TvProvider extends ContentProvider {
     @Override
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
             String sortOrder) {
+        ensureInitialized();
         mTransientRowHelper.ensureOldTransientRowsDeleted();
         boolean needsToValidateSortOrder = !callerHasAccessAllEpgDataPermission();
         SqlParams params = createSqlParams(OP_QUERY, uri, selection, selectionArgs);
@@ -1326,6 +1324,7 @@ public class TvProvider extends ContentProvider {
 
     @Override
     public Uri insert(Uri uri, ContentValues values) {
+        ensureInitialized();
         mTransientRowHelper.ensureOldTransientRowsDeleted();
         switch (sUriMatcher.match(uri)) {
             case MATCH_CHANNEL:
@@ -1583,6 +1582,14 @@ public class TvProvider extends ContentProvider {
                     + "immutable column.");
         }
         return count;
+    }
+
+    private synchronized void ensureInitialized() {
+        if (!sInitialized) {
+            // Database is not accessed before and the projection maps and the blocked package list
+            // are not updated yet. Gets database here to make it initialized.
+            mOpenHelper.getReadableDatabase().close();
+        }
     }
 
     private Map<String, String> createProjectionMapForQuery(String[] projection,
