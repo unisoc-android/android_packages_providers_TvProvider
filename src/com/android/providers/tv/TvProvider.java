@@ -1697,7 +1697,8 @@ public class TvProvider extends ContentProvider {
                     String startTime = String.valueOf(Long.parseLong(paramStartTime));
                     String endTime = String.valueOf(Long.parseLong(paramEndTime));
                     params.appendWhere(Programs.COLUMN_START_TIME_UTC_MILLIS + "<=? AND "
-                            + Programs.COLUMN_END_TIME_UTC_MILLIS + ">=?", endTime, startTime);
+                            + Programs.COLUMN_END_TIME_UTC_MILLIS + ">=? AND ?<=?", endTime,
+                            startTime, startTime, endTime);
                 }
                 break;
             case MATCH_PROGRAM_ID:
