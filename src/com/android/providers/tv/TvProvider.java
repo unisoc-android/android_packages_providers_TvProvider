@@ -1588,7 +1588,7 @@ public class TvProvider extends ContentProvider {
         if (!sInitialized) {
             // Database is not accessed before and the projection maps and the blocked package list
             // are not updated yet. Gets database here to make it initialized.
-            mOpenHelper.getReadableDatabase().close();
+            mOpenHelper.getReadableDatabase();
         }
     }
 
