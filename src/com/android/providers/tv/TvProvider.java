@@ -1383,8 +1383,12 @@ public class TvProvider extends ContentProvider {
     }
 
     private Uri insertProgram(Uri uri, ContentValues values) {
-        // Mark the owner package of this program.
-        values.put(Programs.COLUMN_PACKAGE_NAME, getCallingPackage_());
+        if (!callerHasAccessAllEpgDataPermission() ||
+                !values.containsKey(Programs.COLUMN_PACKAGE_NAME)) {
+            // Mark the owner package of this program. System app with a proper permission may
+            // change the owner of the program.
+            values.put(Programs.COLUMN_PACKAGE_NAME, getCallingPackage_());
+        }
 
         checkAndConvertGenre(values);
         checkAndConvertDeprecatedColumns(values);
