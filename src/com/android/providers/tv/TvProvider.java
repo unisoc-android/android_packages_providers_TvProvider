@@ -970,38 +970,9 @@ public class TvProvider extends ContentProvider {
 
         @Override
         public void onOpen(SQLiteDatabase db) {
-            // This method is thread-safe. It's guaranteed by the implementation of SQLiteOpenHelper
-            if (!sInitialized) {
-                buildProjectionMap(db);
-                sBlockedPackagesSharedPreference = PreferenceManager.getDefaultSharedPreferences(
-                        mContext);
-                sBlockedPackages = new ConcurrentHashMap<>();
-                for (String packageName : sBlockedPackagesSharedPreference.getStringSet(
-                        SHARED_PREF_BLOCKED_PACKAGES_KEY, new HashSet<>())) {
-                    sBlockedPackages.put(packageName, true);
-                }
-                sInitialized = true;
-            }
-        }
-
-        private void buildProjectionMap(SQLiteDatabase db) {
-            updateProjectionMap(db, CHANNELS_TABLE, sChannelProjectionMap);
-            updateProjectionMap(db, PROGRAMS_TABLE, sProgramProjectionMap);
-            updateProjectionMap(db, WATCHED_PROGRAMS_TABLE, sWatchedProgramProjectionMap);
-            updateProjectionMap(db, RECORDED_PROGRAMS_TABLE, sRecordedProgramProjectionMap);
-            updateProjectionMap(db, PREVIEW_PROGRAMS_TABLE, sPreviewProgramProjectionMap);
-            updateProjectionMap(db, WATCH_NEXT_PROGRAMS_TABLE, sWatchNextProgramProjectionMap);
-        }
-
-        private void updateProjectionMap(SQLiteDatabase db, String tableName,
-                Map<String, String> projectionMap) {
-            try(Cursor cursor = db.rawQuery("SELECT * FROM " + tableName + " LIMIT 0", null)) {
-                for (String columnName : cursor.getColumnNames()) {
-                    if (!projectionMap.containsKey(columnName)) {
-                        projectionMap.put(columnName, tableName + '.' + columnName);
-                    }
-                }
-            }
+            // Call a static method on the TvProvider because changes to sInitialized must
+            // be guarded by a lock on the class.
+            initOnOpenIfNeeded(mContext, db);
         }
 
         private static void migrateIntegerColumnToTextColumn(SQLiteDatabase db, String table,
@@ -1593,6 +1564,36 @@ public class TvProvider extends ContentProvider {
             // Database is not accessed before and the projection maps and the blocked package list
             // are not updated yet. Gets database here to make it initialized.
             mOpenHelper.getReadableDatabase();
+        }
+    }
+
+    private static synchronized void initOnOpenIfNeeded(Context context, SQLiteDatabase db) {
+        if (!sInitialized) {
+            updateProjectionMap(db, CHANNELS_TABLE, sChannelProjectionMap);
+            updateProjectionMap(db, PROGRAMS_TABLE, sProgramProjectionMap);
+            updateProjectionMap(db, WATCHED_PROGRAMS_TABLE, sWatchedProgramProjectionMap);
+            updateProjectionMap(db, RECORDED_PROGRAMS_TABLE, sRecordedProgramProjectionMap);
+            updateProjectionMap(db, PREVIEW_PROGRAMS_TABLE, sPreviewProgramProjectionMap);
+            updateProjectionMap(db, WATCH_NEXT_PROGRAMS_TABLE, sWatchNextProgramProjectionMap);
+            sBlockedPackagesSharedPreference = PreferenceManager.getDefaultSharedPreferences(
+                    context);
+            sBlockedPackages = new ConcurrentHashMap<>();
+            for (String packageName : sBlockedPackagesSharedPreference.getStringSet(
+                    SHARED_PREF_BLOCKED_PACKAGES_KEY, new HashSet<>())) {
+                sBlockedPackages.put(packageName, true);
+            }
+            sInitialized = true;
+        }
+    }
+
+    private static void updateProjectionMap(SQLiteDatabase db, String tableName,
+            Map<String, String> projectionMap) {
+        try(Cursor cursor = db.rawQuery("SELECT * FROM " + tableName + " LIMIT 0", null)) {
+            for (String columnName : cursor.getColumnNames()) {
+                if (!projectionMap.containsKey(columnName)) {
+                    projectionMap.put(columnName, tableName + '.' + columnName);
+                }
+            }
         }
     }
 
