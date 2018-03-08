@@ -69,9 +69,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -84,7 +87,7 @@ public class TvProvider extends ContentProvider {
     private static final boolean DEBUG = false;
     private static final String TAG = "TvProvider";
 
-    static final int DATABASE_VERSION = 34;
+    static final int DATABASE_VERSION = 35;
     static final String SHARED_PREF_BLOCKED_PACKAGES_KEY = "blocked_packages";
     static final String CHANNELS_TABLE = "channels";
     static final String PROGRAMS_TABLE = "programs";
@@ -102,6 +105,7 @@ public class TvProvider extends ContentProvider {
     // is consolidated or not. Unconsolidated entries may have columns with missing data.
     static final String WATCHED_PROGRAMS_COLUMN_CONSOLIDATED = "consolidated";
     static final String CHANNELS_COLUMN_LOGO = "logo";
+    static final String PROGRAMS_COLUMN_SERIES_ID = "series_id";
     private static final String DATABASE_NAME = "tv.db";
     private static final String DELETED_CHANNELS_TABLE = "deleted_channels";  // Deprecated
     private static final String DEFAULT_PROGRAMS_SORT_ORDER = Programs.COLUMN_START_TIME_UTC_MILLIS
@@ -277,6 +281,7 @@ public class TvProvider extends ContentProvider {
                 Programs.COLUMN_REVIEW_RATING_STYLE);
         sProgramProjectionMap.put(Programs.COLUMN_REVIEW_RATING,
                 Programs.COLUMN_REVIEW_RATING);
+        sProgramProjectionMap.put(PROGRAMS_COLUMN_SERIES_ID, PROGRAMS_COLUMN_SERIES_ID);
 
         sWatchedProgramProjectionMap = new HashMap<>();
         sWatchedProgramProjectionMap.put(WatchedPrograms._ID, WatchedPrograms._ID);
@@ -369,6 +374,7 @@ public class TvProvider extends ContentProvider {
                 RecordedPrograms.COLUMN_REVIEW_RATING_STYLE);
         sRecordedProgramProjectionMap.put(RecordedPrograms.COLUMN_REVIEW_RATING,
                 RecordedPrograms.COLUMN_REVIEW_RATING);
+        sRecordedProgramProjectionMap.put(PROGRAMS_COLUMN_SERIES_ID, PROGRAMS_COLUMN_SERIES_ID);
 
         sPreviewProgramProjectionMap = new HashMap<>();
         sPreviewProgramProjectionMap.put(PreviewPrograms._ID, PreviewPrograms._ID);
@@ -610,6 +616,7 @@ public class TvProvider extends ContentProvider {
             + RecordedPrograms.COLUMN_VERSION_NUMBER + " INTEGER,"
             + RecordedPrograms.COLUMN_REVIEW_RATING_STYLE + " INTEGER,"
             + RecordedPrograms.COLUMN_REVIEW_RATING + " TEXT,"
+            + PROGRAMS_COLUMN_SERIES_ID + " TEXT,"
             + "FOREIGN KEY(" + RecordedPrograms.COLUMN_CHANNEL_ID + ") "
                     + "REFERENCES " + CHANNELS_TABLE + "(" + Channels._ID + ") "
                     + "ON UPDATE CASCADE ON DELETE SET NULL);";
@@ -829,6 +836,7 @@ public class TvProvider extends ContentProvider {
                     + Programs.COLUMN_REVIEW_RATING_STYLE + " INTEGER,"
                     + Programs.COLUMN_REVIEW_RATING + " TEXT,"
                     + Programs.COLUMN_VERSION_NUMBER + " INTEGER,"
+                    + PROGRAMS_COLUMN_SERIES_ID + " TEXT,"
                     + "FOREIGN KEY("
                             + Programs.COLUMN_CHANNEL_ID + "," + Programs.COLUMN_PACKAGE_NAME
                             + ") REFERENCES " + CHANNELS_TABLE + "("
@@ -964,6 +972,17 @@ public class TvProvider extends ContentProvider {
                 db.execSQL(CREATE_PREVIEW_PROGRAMS_CHANNEL_ID_INDEX_SQL);
                 db.execSQL(CREATE_WATCH_NEXT_PROGRAMS_TABLE_SQL);
                 db.execSQL(CREATE_WATCH_NEXT_PROGRAMS_PACKAGE_NAME_INDEX_SQL);
+            }
+            if (oldVersion <= 34) {
+                if (!getColumnNames(db, PROGRAMS_TABLE).contains(PROGRAMS_COLUMN_SERIES_ID)) {
+                    db.execSQL("ALTER TABLE " + PROGRAMS_TABLE + " ADD "
+                            + PROGRAMS_COLUMN_SERIES_ID+ " TEXT;");
+                }
+                if (!getColumnNames(db, RECORDED_PROGRAMS_TABLE)
+                        .contains(PROGRAMS_COLUMN_SERIES_ID)) {
+                    db.execSQL("ALTER TABLE " + RECORDED_PROGRAMS_TABLE + " ADD "
+                            + PROGRAMS_COLUMN_SERIES_ID+ " TEXT;");
+                }
             }
             Log.i(TAG, "Upgrading from version " + oldVersion + " to " + newVersion + " is done.");
         }
@@ -1589,12 +1608,19 @@ public class TvProvider extends ContentProvider {
 
     private static void updateProjectionMap(SQLiteDatabase db, String tableName,
             Map<String, String> projectionMap) {
-        try (Cursor cursor = db.rawQuery("SELECT * FROM " + tableName + " LIMIT 0", null)) {
-            for (String columnName : cursor.getColumnNames()) {
+            for (String columnName : getColumnNames(db, tableName)) {
                 if (!projectionMap.containsKey(columnName)) {
                     projectionMap.put(columnName, tableName + '.' + columnName);
                 }
             }
+    }
+
+    private static List<String> getColumnNames(SQLiteDatabase db, String tableName) {
+        try (Cursor cursor = db.rawQuery("SELECT * FROM " + tableName + " LIMIT 0", null)) {
+            return Arrays.asList(cursor.getColumnNames());
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to get columns from " + tableName, e);
+            return Collections.emptyList();
         }
     }
 
