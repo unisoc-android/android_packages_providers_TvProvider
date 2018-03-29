@@ -1003,6 +1003,7 @@ public class TvProvider extends ContentProvider {
     }
 
     private DatabaseHelper mOpenHelper;
+    private AsyncTask<Void, Void, Void> mDeleteUnconsolidatedWatchedProgramsTask;
     private static SharedPreferences sBlockedPackagesSharedPreference;
     private static Map<String, Boolean> sBlockedPackages;
     @VisibleForTesting
@@ -1023,14 +1024,26 @@ public class TvProvider extends ContentProvider {
         buildGenreMap();
 
         // DB operation, which may trigger upgrade, should not happen in onCreate.
-        new AsyncTask<Void, Void, Void>() {
-            @Override
-            protected Void doInBackground(Void... params) {
-                deleteUnconsolidatedWatchedProgramsRows();
-                return null;
-            }
-        }.execute();
+        mDeleteUnconsolidatedWatchedProgramsTask =
+                new AsyncTask<Void, Void, Void>() {
+                    @Override
+                    protected Void doInBackground(Void... params) {
+                        deleteUnconsolidatedWatchedProgramsRows();
+                        return null;
+                    }
+                };
+        mDeleteUnconsolidatedWatchedProgramsTask.execute();
         return true;
+    }
+
+    @Override
+    public void shutdown() {
+        super.shutdown();
+
+        if (mDeleteUnconsolidatedWatchedProgramsTask != null) {
+            mDeleteUnconsolidatedWatchedProgramsTask.cancel(true);
+            mDeleteUnconsolidatedWatchedProgramsTask = null;
+        }
     }
 
     @VisibleForTesting
