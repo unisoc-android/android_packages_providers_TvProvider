@@ -31,7 +31,7 @@ class TvProviderForTesting extends TvProvider {
     @Override
     public boolean onCreate() {
         mDatabaseHelper = new DatabaseHelperForTesting(getContext(), TvProvider.DATABASE_VERSION);
-        setOpenHelper(mDatabaseHelper);
+        setOpenHelper(mDatabaseHelper, false);
         return super.onCreate();
     }
 

@@ -145,12 +145,12 @@ public class TvProvider extends ContentProvider {
 
     private static final long MAX_PROGRAM_DATA_DELAY_IN_MILLIS = 10 * 1000; // 10 seconds
 
-    private static final Map<String, String> sChannelProjectionMap;
-    private static final Map<String, String> sProgramProjectionMap;
-    private static final Map<String, String> sWatchedProgramProjectionMap;
-    private static final Map<String, String> sRecordedProgramProjectionMap;
-    private static final Map<String, String> sPreviewProgramProjectionMap;
-    private static final Map<String, String> sWatchNextProgramProjectionMap;
+    private static final Map<String, String> sChannelProjectionMap = new HashMap<>();
+    private static final Map<String, String> sProgramProjectionMap = new HashMap<>();
+    private static final Map<String, String> sWatchedProgramProjectionMap = new HashMap<>();
+    private static final Map<String, String> sRecordedProgramProjectionMap = new HashMap<>();
+    private static final Map<String, String> sPreviewProgramProjectionMap = new HashMap<>();
+    private static final Map<String, String> sWatchNextProgramProjectionMap = new HashMap<>();
     private static boolean sInitialized;
 
     static {
@@ -170,8 +170,10 @@ public class TvProvider extends ContentProvider {
         sUriMatcher.addURI(TvContract.AUTHORITY, "watch_next_program", MATCH_WATCH_NEXT_PROGRAM);
         sUriMatcher.addURI(TvContract.AUTHORITY, "watch_next_program/#",
                 MATCH_WATCH_NEXT_PROGRAM_ID);
+    }
 
-        sChannelProjectionMap = new HashMap<>();
+     private static void initProjectionMaps() {
+        sChannelProjectionMap.clear();
         sChannelProjectionMap.put(Channels._ID, CHANNELS_TABLE + "." + Channels._ID);
         sChannelProjectionMap.put(Channels.COLUMN_PACKAGE_NAME,
                 CHANNELS_TABLE + "." + Channels.COLUMN_PACKAGE_NAME);
@@ -230,7 +232,7 @@ public class TvProvider extends ContentProvider {
         sChannelProjectionMap.put(Channels.COLUMN_INTERNAL_PROVIDER_ID,
                 CHANNELS_TABLE + "." + Channels.COLUMN_INTERNAL_PROVIDER_ID);
 
-        sProgramProjectionMap = new HashMap<>();
+        sProgramProjectionMap.clear();
         sProgramProjectionMap.put(Programs._ID, Programs._ID);
         sProgramProjectionMap.put(Programs.COLUMN_PACKAGE_NAME, Programs.COLUMN_PACKAGE_NAME);
         sProgramProjectionMap.put(Programs.COLUMN_CHANNEL_ID, Programs.COLUMN_CHANNEL_ID);
@@ -283,7 +285,7 @@ public class TvProvider extends ContentProvider {
                 Programs.COLUMN_REVIEW_RATING);
         sProgramProjectionMap.put(PROGRAMS_COLUMN_SERIES_ID, PROGRAMS_COLUMN_SERIES_ID);
 
-        sWatchedProgramProjectionMap = new HashMap<>();
+        sWatchedProgramProjectionMap.clear();
         sWatchedProgramProjectionMap.put(WatchedPrograms._ID, WatchedPrograms._ID);
         sWatchedProgramProjectionMap.put(WatchedPrograms.COLUMN_WATCH_START_TIME_UTC_MILLIS,
                 WatchedPrograms.COLUMN_WATCH_START_TIME_UTC_MILLIS);
@@ -306,7 +308,7 @@ public class TvProvider extends ContentProvider {
         sWatchedProgramProjectionMap.put(WATCHED_PROGRAMS_COLUMN_CONSOLIDATED,
                 WATCHED_PROGRAMS_COLUMN_CONSOLIDATED);
 
-        sRecordedProgramProjectionMap = new HashMap<>();
+        sRecordedProgramProjectionMap.clear();
         sRecordedProgramProjectionMap.put(RecordedPrograms._ID, RecordedPrograms._ID);
         sRecordedProgramProjectionMap.put(RecordedPrograms.COLUMN_PACKAGE_NAME,
                 RecordedPrograms.COLUMN_PACKAGE_NAME);
@@ -376,7 +378,7 @@ public class TvProvider extends ContentProvider {
                 RecordedPrograms.COLUMN_REVIEW_RATING);
         sRecordedProgramProjectionMap.put(PROGRAMS_COLUMN_SERIES_ID, PROGRAMS_COLUMN_SERIES_ID);
 
-        sPreviewProgramProjectionMap = new HashMap<>();
+        sPreviewProgramProjectionMap.clear();
         sPreviewProgramProjectionMap.put(PreviewPrograms._ID, PreviewPrograms._ID);
         sPreviewProgramProjectionMap.put(PreviewPrograms.COLUMN_PACKAGE_NAME,
                 PreviewPrograms.COLUMN_PACKAGE_NAME);
@@ -471,7 +473,7 @@ public class TvProvider extends ContentProvider {
         sPreviewProgramProjectionMap.put(PreviewPrograms.COLUMN_CONTENT_ID,
                 PreviewPrograms.COLUMN_CONTENT_ID);
 
-        sWatchNextProgramProjectionMap = new HashMap<>();
+        sWatchNextProgramProjectionMap.clear();
         sWatchNextProgramProjectionMap.put(WatchNextPrograms._ID, WatchNextPrograms._ID);
         sWatchNextProgramProjectionMap.put(WatchNextPrograms.COLUMN_PACKAGE_NAME,
                 WatchNextPrograms.COLUMN_PACKAGE_NAME);
@@ -1088,8 +1090,11 @@ public class TvProvider extends ContentProvider {
     }
 
     @VisibleForTesting
-    void setOpenHelper(DatabaseHelper helper) {
+    synchronized void setOpenHelper(DatabaseHelper helper, boolean reInit) {
         mOpenHelper = helper;
+        if (reInit) {
+            sInitialized = false;
+        }
     }
 
     @Override
@@ -1544,6 +1549,7 @@ public class TvProvider extends ContentProvider {
 
     @Override
     public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
+        ensureInitialized();
         mTransientRowHelper.ensureOldTransientRowsDeleted();
         SqlParams params = createSqlParams(OP_UPDATE, uri, selection, selectionArgs);
         blockIllegalAccessToIdAndPackageName(uri, values);
@@ -1602,6 +1608,7 @@ public class TvProvider extends ContentProvider {
 
     private static synchronized void initOnOpenIfNeeded(Context context, SQLiteDatabase db) {
         if (!sInitialized) {
+            initProjectionMaps();
             updateProjectionMap(db, CHANNELS_TABLE, sChannelProjectionMap);
             updateProjectionMap(db, PROGRAMS_TABLE, sProgramProjectionMap);
             updateProjectionMap(db, WATCHED_PROGRAMS_TABLE, sWatchedProgramProjectionMap);
