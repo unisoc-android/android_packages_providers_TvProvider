@@ -26,12 +26,14 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.media.tv.TvContract;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.util.Log;
 
 import com.android.providers.tv.TvProvider.DatabaseHelper;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
 
 /**
  * This will be launched when BOOT_COMPLETED intent is broadcast.
@@ -43,22 +45,36 @@ public class BootCompletedReceiver extends BroadcastReceiver {
     private static final String[] PROJECTION = {TvContract.BaseTvColumns.COLUMN_PACKAGE_NAME};
     private static final String WHERE = TvContract.BaseTvColumns.COLUMN_PACKAGE_NAME + "=?";
 
+    private final Executor mExecutor;
+
+    public BootCompletedReceiver() {
+        this(AsyncTask.SERIAL_EXECUTOR);
+    }
+
+    public BootCompletedReceiver(Executor executor) {
+        super();
+        mExecutor = executor;
+    }
+
     @Override
     public void onReceive(Context context, Intent intent) {
-        // Delete the transient rows on boot.
-        TransientRowHelper.getInstance(context).ensureOldTransientRowsDeleted();
+        final PendingResult pendingResult = goAsync();
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+                // Delete the transient rows on boot.
+                TransientRowHelper.getInstance(context).ensureOldTransientRowsDeleted();
 
-        SQLiteDatabase db = DatabaseHelper.getInstance(context).getReadableDatabase();
-        deleteRowsOfUninstalledPackages(context, db);
+                SQLiteDatabase db = DatabaseHelper.getInstance(context).getReadableDatabase();
+                deleteRowsOfUninstalledPackages(context, db);
+                pendingResult.finish();
+                return null;
+            }
+        }.executeOnExecutor(mExecutor);
     }
 
     private void deleteRowsOfUninstalledPackages(Context context, SQLiteDatabase db) {
         deleteRowsOfUninstalledPackagesInternal(context, db, TvContract.Channels.CONTENT_URI);
-        deleteRowsOfUninstalledPackagesInternal(context, db, TvContract.Programs.CONTENT_URI);
-        deleteRowsOfUninstalledPackagesInternal(
-                context, db, TvContract.PreviewPrograms.CONTENT_URI);
-        deleteRowsOfUninstalledPackagesInternal(
-                context, db, TvContract.WatchedPrograms.CONTENT_URI);
         deleteRowsOfUninstalledPackagesInternal(
                 context, db, TvContract.RecordedPrograms.CONTENT_URI);
         deleteRowsOfUninstalledPackagesInternal(
