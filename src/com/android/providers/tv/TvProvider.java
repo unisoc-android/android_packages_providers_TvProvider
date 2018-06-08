@@ -117,6 +117,8 @@ public class TvProvider extends ContentProvider {
             + " ON (" + CHANNELS_TABLE + "." + Channels._ID + "="
             + PROGRAMS_TABLE + "." + Programs.COLUMN_CHANNEL_ID + ")";
 
+    private static final String COUNT_STAR = "count(*) as " + BaseColumns._COUNT;
+
     // Operation names for createSqlParams().
     private static final String OP_QUERY = "query";
     private static final String OP_UPDATE = "update";
@@ -175,6 +177,7 @@ public class TvProvider extends ContentProvider {
      private static void initProjectionMaps() {
         sChannelProjectionMap.clear();
         sChannelProjectionMap.put(Channels._ID, CHANNELS_TABLE + "." + Channels._ID);
+        sChannelProjectionMap.put(Channels._COUNT, COUNT_STAR);
         sChannelProjectionMap.put(Channels.COLUMN_PACKAGE_NAME,
                 CHANNELS_TABLE + "." + Channels.COLUMN_PACKAGE_NAME);
         sChannelProjectionMap.put(Channels.COLUMN_INPUT_ID,
@@ -234,6 +237,7 @@ public class TvProvider extends ContentProvider {
 
         sProgramProjectionMap.clear();
         sProgramProjectionMap.put(Programs._ID, Programs._ID);
+        sProgramProjectionMap.put(Programs._COUNT, COUNT_STAR);
         sProgramProjectionMap.put(Programs.COLUMN_PACKAGE_NAME, Programs.COLUMN_PACKAGE_NAME);
         sProgramProjectionMap.put(Programs.COLUMN_CHANNEL_ID, Programs.COLUMN_CHANNEL_ID);
         sProgramProjectionMap.put(Programs.COLUMN_TITLE, Programs.COLUMN_TITLE);
@@ -287,6 +291,7 @@ public class TvProvider extends ContentProvider {
 
         sWatchedProgramProjectionMap.clear();
         sWatchedProgramProjectionMap.put(WatchedPrograms._ID, WatchedPrograms._ID);
+        sWatchedProgramProjectionMap.put(WatchedPrograms._COUNT, COUNT_STAR);
         sWatchedProgramProjectionMap.put(WatchedPrograms.COLUMN_WATCH_START_TIME_UTC_MILLIS,
                 WatchedPrograms.COLUMN_WATCH_START_TIME_UTC_MILLIS);
         sWatchedProgramProjectionMap.put(WatchedPrograms.COLUMN_WATCH_END_TIME_UTC_MILLIS,
@@ -310,6 +315,7 @@ public class TvProvider extends ContentProvider {
 
         sRecordedProgramProjectionMap.clear();
         sRecordedProgramProjectionMap.put(RecordedPrograms._ID, RecordedPrograms._ID);
+        sRecordedProgramProjectionMap.put(RecordedPrograms._COUNT, COUNT_STAR);
         sRecordedProgramProjectionMap.put(RecordedPrograms.COLUMN_PACKAGE_NAME,
                 RecordedPrograms.COLUMN_PACKAGE_NAME);
         sRecordedProgramProjectionMap.put(RecordedPrograms.COLUMN_INPUT_ID,
@@ -380,6 +386,7 @@ public class TvProvider extends ContentProvider {
 
         sPreviewProgramProjectionMap.clear();
         sPreviewProgramProjectionMap.put(PreviewPrograms._ID, PreviewPrograms._ID);
+        sPreviewProgramProjectionMap.put(PreviewPrograms._COUNT, COUNT_STAR);
         sPreviewProgramProjectionMap.put(PreviewPrograms.COLUMN_PACKAGE_NAME,
                 PreviewPrograms.COLUMN_PACKAGE_NAME);
         sPreviewProgramProjectionMap.put(PreviewPrograms.COLUMN_CHANNEL_ID,
@@ -475,6 +482,7 @@ public class TvProvider extends ContentProvider {
 
         sWatchNextProgramProjectionMap.clear();
         sWatchNextProgramProjectionMap.put(WatchNextPrograms._ID, WatchNextPrograms._ID);
+        sWatchNextProgramProjectionMap.put(WatchNextPrograms._COUNT, COUNT_STAR);
         sWatchNextProgramProjectionMap.put(WatchNextPrograms.COLUMN_PACKAGE_NAME,
                 WatchNextPrograms.COLUMN_PACKAGE_NAME);
         sWatchNextProgramProjectionMap.put(WatchNextPrograms.COLUMN_TITLE,
@@ -1653,7 +1661,7 @@ public class TvProvider extends ContentProvider {
         for (String columnName : projection) {
             // Value NULL will be provided if the requested column does not exist in the database.
             columnProjectionMap.put(columnName,
-                    projectionMap.getOrDefault(columnName, "NULL as " + columnName));
+                     projectionMap.getOrDefault(columnName, "NULL as " + columnName));
         }
         return columnProjectionMap;
     }
