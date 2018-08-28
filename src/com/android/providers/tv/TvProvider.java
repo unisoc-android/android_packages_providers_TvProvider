@@ -767,6 +767,7 @@ public class TvProvider extends ContentProvider {
         DatabaseHelper(Context context, String databaseName, int databaseVersion) {
             super(context, databaseName, null, databaseVersion);
             mContext = context;
+            setWriteAheadLoggingEnabled(true);
         }
 
         @Override
