@@ -70,7 +70,7 @@ public class DatabaseHelperTest extends AndroidTestCase {
         assertEquals(BASE_DATABASE_VERSION, db.getVersion());
         mDatabaseHelper.close();
 
-        // need to re-initialize the projrction maps. Some constumized columns may have been added
+        // need to re-initialize the projrction maps. Some customized columns may have been added
         // to projection maps, and they do not exist in the DB of DatabaseHelperForTesting.
         mProvider.setOpenHelper(
                 new DatabaseHelperForTesting(getContext(), TvProvider.DATABASE_VERSION), true);
