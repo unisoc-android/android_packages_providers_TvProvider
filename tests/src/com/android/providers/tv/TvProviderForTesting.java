@@ -21,6 +21,7 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.media.tv.TvContract;
 import android.net.Uri;
+import java.io.File;
 
 class TvProviderForTesting extends TvProvider {
     private static final String FAKE_SESSION_TOKEN = "TvProviderForTesting";
@@ -51,7 +52,10 @@ class TvProviderForTesting extends TvProvider {
         super.shutdown();
 
         if (mDatabaseHelper != null) {
+            SQLiteDatabase db = mDatabaseHelper.getWritableDatabase();
+            File databaseFile = new File(db.getPath());
             mDatabaseHelper.close();
+            SQLiteDatabase.deleteDatabase(databaseFile);
         }
     }
 
