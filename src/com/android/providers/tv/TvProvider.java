@@ -124,7 +124,6 @@ public class TvProvider extends ContentProvider {
     private static final String OP_UPDATE = "update";
     private static final String OP_DELETE = "delete";
 
-
     private static final UriMatcher sUriMatcher;
     private static final int MATCH_CHANNEL = 1;
     private static final int MATCH_CHANNEL_ID = 2;
@@ -1660,9 +1659,15 @@ public class TvProvider extends ContentProvider {
         }
         Map<String, String> columnProjectionMap = new HashMap<>();
         for (String columnName : projection) {
-            // Value NULL will be provided if the requested column does not exist in the database.
-            columnProjectionMap.put(columnName,
-                     projectionMap.getOrDefault(columnName, "NULL as " + columnName));
+            String value = projectionMap.get(columnName);
+            if (value != null) {
+                columnProjectionMap.put(columnName, value);
+            } else {
+                // Value NULL will be provided if the requested column does not exist in the
+                // database.
+                value = "NULL AS " + DatabaseUtils.sqlEscapeString(columnName);
+                columnProjectionMap.put(columnName, value);
+            }
         }
         return columnProjectionMap;
     }
