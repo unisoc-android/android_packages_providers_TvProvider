@@ -63,6 +63,8 @@ import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.os.SomeArgs;
 import com.android.providers.tv.util.SqlParams;
 
+import com.android.providers.tv.util.SqliteTokenFinder;
+import java.util.Locale;
 import libcore.io.IoUtils;
 
 import java.io.ByteArrayOutputStream;
@@ -1667,9 +1669,23 @@ public class TvProvider extends ContentProvider {
                 // database.
                 value = "NULL AS " + DatabaseUtils.sqlEscapeString(columnName);
                 columnProjectionMap.put(columnName, value);
+
+                if (needEventLog(columnName)) {
+                    android.util.EventLog.writeEvent(0x534e4554, "135269669", -1, "");
+                }
             }
         }
         return columnProjectionMap;
+    }
+
+    private boolean needEventLog(String columnName) {
+        for (int i = 0; i < columnName.length(); i++) {
+            char c = columnName.charAt(i);
+            if (!Character.isLetterOrDigit(c) && c != '_') {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void filterContentValues(ContentValues values, Map<String, String> projectionMap) {
@@ -1685,6 +1701,18 @@ public class TvProvider extends ContentProvider {
     private SqlParams createSqlParams(String operation, Uri uri, String selection,
             String[] selectionArgs) {
         int match = sUriMatcher.match(uri);
+
+        SqliteTokenFinder.findTokens(selection, p -> {
+            if (p.first == SqliteTokenFinder.TYPE_REGULAR
+                    && TextUtils.equals(p.second.toUpperCase(Locale.US), "SELECT")) {
+                // only when a keyword is not in quotes or brackets
+                // see https://www.sqlite.org/lang_keywords.html
+                android.util.EventLog.writeEvent(0x534e4554, "135269669", -1, "");
+                throw new SecurityException(
+                        "Subquery is not allowed in selection: " + selection);
+            }
+        });
+
         SqlParams params = new SqlParams(null, selection, selectionArgs);
 
         // Control access to EPG data (excluding watched programs) when the caller doesn't have all
